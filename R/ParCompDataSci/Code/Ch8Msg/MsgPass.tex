@@ -1,0 +1,869 @@
+\chapter{The Message Passing Paradigm} 
+\label{chap:msgpass}
+
+
+The scatter-gather paradigm we've seen in all our examples so far works
+well for many problems, but it can be confining.  This and the next
+chapter will present more general approaches to parallel computation.
+
+Instead of a situation in which the workers communicate only with the
+manager, think now of allowing the workers to send messages to each
+other as well.  This general case is known as the {\it message passing}
+paradigm, the subject of this chapter.
+
+A message-passing library will have some kind of {\bf send()} and {\bf
+receive()} functions for its basic operations, along with variants such
+as broadcasting messages to all processes.  In addition, there may be
+functions for the other operations, such as:
+
+\begin{itemize}
+
+\item Scatter/gather.
+
+\item Reduce, similar to R's {\bf Reduce()} function but applied to data
+coming in from many other processes.
+
+\item {\it Remote procedure call}, in which one process triggers a
+function call at another process. 
+
+\end{itemize}
+
+The most popular C-level package for message passing is the Message
+Passing Interface (MPI), a collection of routines callable from C/C++.
+Professor Hao Yu of the University of Western Ontario wrote an R
+library, {\bf Rmpi}, that interfaces R to MPI, as well as adding a
+number of R-specific functions.  {\bf Rmpi} will be our main focus in
+this chapter.  (Two other popular message-passing libraries, PVM and
+0MQ, also have had R interfaces developed for them, as well as a very
+promising new R interface to MPI, {\bf pdbR}.)
+
+So with {\bf Rmpi}, we might have, say, eight machines in our cluster.
+When we run {\bf Rmpi} from one machine, that will then start up R
+processes on each of the other machines.  The various processes will
+occasionally exchange data, via calls to {\bf Rmpi} functions, in order
+to run the given application in parallel.
+
+We'll cover a specific example shortly.  But first, let's follow up on
+the discussion of Section \ref{latban}, and note the special issues that
+arise with message passing code.
+
+\section{Performance Issues}
+
+Message passing is a software/algorithmic notion, and thus does not
+imply any special structure of the underlying hardware platform.  So,
+although MPI and {\bf Rmpi} can be run on a multicore machine, which is
+quite common,  but message passing is typically thought of as being
+run on a cluster, i.e. a network of independent standalone machines, each
+having its own processor and memory.  In a small business or university
+computing lab, for instance, one may have a number of PCs, connected by
+a network.  Though each PC runs independently of the others, one
+can use the network to pass messages among the PCs, thus forming a
+parallel processing system.  We'll assume this situation thoughout.
+
+\subsection{The Basic Problems}
+
+The physical network in such a system is typically simple.  In the
+simplest case it consists of a single cable, causing contention
+problems, e.g. several processes fighting to access the cable at the
+same time.
+
+Another source of slowdown is the network system software.  To see this,
+let's briefly introduce the famous Seven Layer Model of computer
+networks.  It starts with an interface for application programs, say a
+Web browser, at the top level, and ends with the layer that actually
+puts bits onto the physical network at the bottom level.  The
+implementation of this in an operating system is called the {\it network
+protocol stack}.  If you point your Web browser to, say CNN.com, the
+browser will feed your request to the top layer of the stack, creating a
+{\it packet} that filters down the stack.  The packet gets new
+information added at each level, e.g. the Internet IP address for your
+machine, and thus grows larger as it descends the stack.
+
+As your packet travels to Atlanta, the CNN headquarters in Atlanta
+(ignoring possible cache copies before then), it will hop from one
+network to another via {\it routers}.  When it gets to CNN, the packet
+will now go {\it up} the protocol stack at a Web server machine there,
+finally reaching the server program.
+
+The Seven Layer Model, and its TCP/IP implementation, was a great
+innovation when it was invented, as it allowed separation of
+functionality.  This allowed the same program to perform network
+communication on different underlying hardware, for example.  But each
+layer exacts its own time penalty, due to the time spent transferring a
+message from one layer to another.  This causes delay on the sending
+end, as a message travels down the network stack in the operating
+system, and then on the receiving end, as it goes up the stack there.
+
+In data science applications, this delay can be especially acute, as
+copying large amounts of data incurs a large time penalty.
+
+
+\subsection{Solutions}
+
+Though any set of computers that are networked together may be called a
+cluster, the best usage of the terms is for a network of machines that
+is dedicated to high-performance parallel computing.  Since the machines
+are not used individually, one dispenses with the cases and monitors,
+and places multiple PCs on the same rack.
+
+A more important distinction is that a cluster will typically have a
+fancier network than the standard Ethernet used in an office or lab.  An
+example is InfiniBand.  In this technology, the single communications
+channel is replaced by multiple point-to-point links, connected by
+switches.
+
+The fact that there are multiple links means that potential bandwidth is
+greatly increased, and contention for a given link is reduced.
+InfiniBand also strives for low latency.  
+
+Note, though, that even with InfiniBand, latency is on the order of a
+microsecond, i.e. a millionth of a second.  Since CPU clock speeds are
+typically more than a gigaherz, i.e. are capable of billions of
+operations per second, even InfiniBand network latency presents
+considerable overhead.
+
+One way of reducing the overhead arising from the network system
+software is to use {\it remote direct memory access} (RDMA), which
+involves both nonstandard hardware and software.  The name derives from
+the Direct Memory Acess devices that are common in even personal computers
+today.  
+
+When reading from a fast disk, for instance, DMA bypasses the
+``middleman,'' the CPU, and writes directly to memory, a significant
+speedup.  (DMA devices in fact are special-purpose CPUs in their own
+right, designed to copy data directly between an input-output device and
+memory.) Disk writes are made faster the same way.
+
+With RDMA, we bypass a different kind of middleman, in this case the
+network protocol stack.  When reading a message arriving from the
+network, RDMA deposits the message directly into the memory used by our
+program.
+
+\section{Rmpi}
+
+As noted, {\bf Rmpi} is an R interface to the famous MPI protocol,
+the latter normally being accessed via C, C++ or FORTRAN.  MPI consists
+of hundreds of functions callable from user programs.
+
+Note that MPI also provides network services beyond simply sending and
+receiving messages.  An important point is that it enforces message
+order.  If say, messages A and B are sent from process 8 to process 3 in
+that order, then the program at process 3 will receive them in that
+order.  A call at process 3 to receive from process 8 will receive A
+first, with B not being processed until the second such
+call.\footnote{This assumes that the calls do not specify message type,
+discussed below.}  This makes the logic in your application code much
+easier to write.  
+
+In addition, MPI allows the programmer to define several different
+kinds of messages.  One might make a call, for instance, that says in
+essence, ``read the next message of type 2 from process 8,'' or even 
+``read the next message of type 2 from any process.'' 
+
+{\bf Rmpi} provides the R programmer with access to such operations, and
+also provides some new R-specific messaging operations.
+
+With all that power comes complexity.  {\bf Rmpi} can be tricky to
+install---and even to launch---with various platform dependencies to
+deal with, even in terms of how the manager launches the workers.  These
+issues, as well as the plethora of functions available in {\bf Rmpi} and
+the plethora of options in those functions, are beyond the scope of this
+book.  Instead, the hope here is to present a good introduction to the
+message-passing paradigm, with {\bf Rmpi} as our vehicle.
+
+\section{Example:  Pipelined Prime Number Finder}
+
+Prime numbers play a key role (pun intended) in cryptography, the core
+of data security.  R may not be the best vehicle for finding them, but
+this does make for an easy-to-understand example of {\bf Rmpi} and the
+message-passing paradigm, and thus is used here.
+
+Again in the interest of simplicity, the code is not intended to be
+optimal.  In fact, the nonoptimality will serve as a springboard for
+discussion of typical performance issues that arise with message-passing
+systems.
+
+\subsection{The Code}
+
+\begin{lstlisting}[numbers=left]
+# Rmpi code to find prime numbers
+
+# for illustration purposes, not intended to be optimal
+
+# returns vector of all primes in 2..n; the vector "divisors" is used as
+# a basis for a Sieve of Erathosthenes operation; must have n <=
+# (max(divisors)^2) and n even
+
+# the argument "msgsize" controls the chunk size in communication from
+# the manager to the first worker, node 1
+
+primepipe <- function(n,divisors,msgsize) {
+   mpi.bcast.Robj2slave(dowork)
+   mpi.bcast.Robj2slave(dosieve)
+   # start workers; note nonblocking call
+   mpi.bcast.cmd(dowork,n,divisors,msgsize)
+   # remove the evens right away
+   odds <- seq(from=3,to=n,by=2)
+   nodd <- length(odds)
+   # send odds to node 1, in chunks 
+   startmsg <- seq(from=1,to=nodd,by=msgsize)
+   for (s in startmsg) {
+      rng <- s:min(s+msgsize-1,nodd)
+      mpi.send.Robj(odds[rng],tag=0,dest=1)
+   }
+   # send end-data sentinel
+   mpi.send.Robj(NA,tag=0,dest=1)
+   # receive results from last node
+   lastnode <- mpi.comm.size()-1
+   # return te result; don't forget the 2
+   c(2,mpi.recv.Robj(tag=0,source=lastnode))
+}
+
+# worker code
+dowork <- function(n,divisors,msgsize) {
+   # which are my divisors?
+   me <- mpi.comm.rank()
+   lastnode <- mpi.comm.size()-1
+   ld <- length(divisors)
+   tmp <- floor(ld / lastnode)
+   mystart <- (me-1) * tmp + 1
+   myend <- mystart + tmp - 1
+   if (me == lastnode) myend <- ld
+   mydivs <- divisors[mystart:myend]
+   if (me == lastnode) out <- NULL
+   repeat {
+      msg <- mpi.recv.Robj(tag=0,source=me-1)
+      if (me < lastnode) {
+         if (!is.na(msg[1])) {
+            sieveout <- dosieve(msg,mydivs)
+            mpi.send.Robj(sieveout,tag=0,dest=me+1)
+         } else {  # no more coming in, so send sentinel
+            mpi.send.Robj(NA,tag=0,dest=me+1)
+            return()
+         }
+      } else {
+         if (!is.na(msg[1])) {
+            sieveout <- dosieve(msg,mydivs)
+            out <- c(out,sieveout)
+         } else {  # no more coming in, so send results to manager
+            mpi.send.Robj(out,tag=0,dest=0)
+            return()
+         }
+      }
+   }
+}
+
+# check divisibility of the current chunk x
+dosieve <- function(x,divs) {
+   for (d in divs) {
+      x <- x[x %% d != 0 | x == d]
+   }
+   x
+}
+
+# serial prime finder; can be used to generate divisor list of primepipe
+serprime <- function(n) {
+   nums <- 1:n
+   x <- rep(1,n)
+   maxdiv <- ceiling(sqrt(n))
+   for (d in 2:maxdiv) {
+      if (x[d])
+         x[x !=0 & nums > d & nums %% d == 0] <- 0
+   }
+   nums[x != 0 & nums >= 2]
+}
+\end{lstlisting}
+
+\subsection{Usage}
+
+The function {\bf primepipe} has three arguments:
+
+\begin{itemize}
+
+\item {\bf n}:  the function returns the vector of all primes between 2
+and {\bf n}, inclusive
+
+\item {\bf divisors}:  the function checks each potential prime for
+divisibility by the numbers in this vector
+
+\item {\bf msgsize}:  the size of messages from the manager to the first
+worker
+
+\end{itemize}
+
+Here are the details:
+
+This is the classical Sieve of Eratosthenes.  We make a list of the
+numbers from 2 to n, then ``cross out'' all multiples of 2, all
+multiples of 3 and so on.  After the crossing-out by 2s and 3s, for instance,
+our list will look like this:
+
+2 
+3
+\sout{4}
+5
+\sout{6}
+7
+\sout{8}
+\sout{9}
+\sout{10}
+11
+\sout{12}
+...
+
+
+In the end, the numbers that haven't gotten crossed out are the primes.
+
+The vector {\bf divisors} ``primes the pump,'' as it were.  We find a
+small set of primes using nonparallel means, and then use those in the
+larger parallel problem.  But what range do we need for them?  Reason as
+follows.
+
+If a number i has a divisor k larger than $\sqrt{n}$, it must then have
+one (specifically, the number i/k) smaller than that value.  Thus in
+crossing out all multiples of k, we need only consider values of k up to
+$\sqrt{n}$.  So, in order to achieve our goal of finding all the primes
+up through n, we take our {\bf divisors} vector to be all the primes up
+through $\sqrt{n}$.
+
+The function {\bf serprime()} in the code above will do that.  For
+example, say n is 1000.  Then we first find all the primes less than or
+equal to $\sqrt{1000}$, using our nonparallel function:
+
+\begin{Verbatim}[fontsize=\relsize{-2}]
+> dvs <- serprime(ceiling(sqrt(1000)))
+> dvs
+ [1]  2  3  5  7 11 13 17 19 23 29 31
+\end{Verbatim}
+
+We then use these numbers in our parallel function to find the primes up
+through 1000:
+
+\begin{Verbatim}[fontsize=\relsize{-2}]
+> primepipe(1000,dvs,100)
+ [1]  2  3  5  7 11 13 17 19 23 29 31 37 41 43 47 53
+59 61
+ [19] 67 71 73 79 83 89 97 101 103 107 109 113 127 131 137 139 149 151
+ [37] 157 163 167 173 179 181 191 193 197 199 211 223 227 229 233 239 241 251
+ [55] 257 263 269 271 277 281 283 293 307 311 313 317 331 337 347 349 353 359
+ [73] 367 373 379 383 389 397 401 409 419 421 431 433 439 443 449 457 461 463
+ [91] 467 479 487 491 499 503 509 521 523 541 547 557 563 569 571 577 587 593
+[109] 599 601 607 613 617 619 631 641 643 647 653 659 661 673 677 683 691 701
+[127] 709 719 727 733 739 743 751 757 761 769 773 787 797 809 811 821 823 827
+[145] 829 839 853 857 859 863 877 881 883 887 907 911 919 929 937 941 947 953
+[163] 967 971 977 983 991 997
+\end{Verbatim}
+
+Now, to understand the argument {\bf msgsize}, consider the case n =
+1000 above.  Each worker will be responsible for its particular chunk of
+{\bf divisors}.  If we have two workers, then Process 0 (the manager)
+will ``cross out'' multiples of 2; process 1 (the first worker) will
+handle multiples of 3, 5, 7, 11 and 13; process 2 will handle k = 17,
+19, 23, 29 and 31.  So, process 0 will cross out the multiples of 2, and
+send the remaining numbers, the odds, to process 1.  The argument {\bf
+msgsize} specifies the size of chunks of odds that process 0 sends to
+process 1.  More on this point later.
+
+\subsection{Timing Example}
+
+Let's try the case n = 10000000.  The serial code took time 424.592
+seconds.
+
+Let's try it in parallel on a network of PCs, for first two, then three
+and then four workers. with various values for {\bf msgsize}.  The
+results are shown in Table \ref{primestimes}.
+
+\begin{table}
+\begin{center}
+\vskip 0.5in
+\begin{tabular}{|r|r|r|r|}
+\hline
+{\bf msgsize} & 2 workers & 3 workers & 4 workers \\ \hline 
+1000 & 59.487 & 58.175 & 47.248 \\ \hline 
+5000 & 22.855 & 17.541 & 15.454 \\ \hline 
+10000 & 19.230 & 14.734 & 12.522 \\ \hline 
+15000 & 19.198 & 14.874 & 12.689 \\ \hline 
+25000 & 22.516 & 18.057 & 15.591 \\ \hline 
+50000 & 23.029 & 18.573 & 16.114 \\ \hline 
+\end{tabular}
+\end{center}
+\caption{Timings, Prime Number Finding}
+\label{primestimes}
+\end{table}
+
+
+The parallel version was indeed faster than the serial one.  This was
+partly due to parallelism and partly to the fact that the parallel
+version is more efficient, since the serial algorithm does more total
+crossouts.  A fairer comparison might be a recursive version of {\bf
+serprime()}, which would reduce the number of crossouts.  But there are
+other important facets of the timing numbers.
+
+First, as expected, using more workers produced more speed, at least in
+the range tried here.  Note, though, that the speedup was not linear.
+The best time for three workers was only 30\% better than that for two
+workers, compared to a ``perfect'' speedup of 50\%.  Using four workers
+instead of two yields only a 53\% gain.  We'll return to this point
+shortly.
+
+\subsection{Latency, Bandwdith and Parallelism}
+\label{latbandpar}
+
+Another salient aspect here is that {\bf msgsize} matters.  Recall
+Section \ref{latband}, especially Equation (\ref{latbandformula}).
+Let's see how they affect things here.
+
+In our timings above, setting the {\bf msgsize} parameter to the lower
+value, 1000, results in have more chunks, thus more times that we incur
+the network latency l.  On the other hand, a value of 50000 less
+parallelism, and impedes are ability to engage in latency hiding
+(Section \ref{latband}), in which we try to overlap computation and
+communication; this reduces parallelism and thus reduces speed.
+
+\subsection{Possible Improvements}
+
+There are a number of ways in which the code could be improved
+algorithmically.  Notably, we have a serious load balance problem
+(Section \ref{obstacles}).  Here's why:
+
+We first remove all multiples of 2, leaving n/2 numbers.  We then remove
+all multiples of 3 from the latter, leaving n/6 numbers.  It can be seen
+from this that process 2 has much less work to do that process 1, and
+process 3 has a much lighter load than process 2, etc.
+
+One possible solution might be to have the code do its partitioning of
+the vector {\bf divisors} in an uneven way, assigning larger chunks of
+the vector to the later processes.
+
+Note too that the code sends data messages via the functions {\bf
+mpi.send.Robj()} and {\bf mpi.recv.Robj()}, rather than {\bf mpi.send()}
+and {\bf mpi.recv()}.  The latter two would be more efficient, as the
+former two perform serialize/unserialize operations (Section
+\ref{serialize}), thus slowing things down, and are also slower in
+terms of memory allocation (Section \ref{memallocissues}).  Nevertheless,
+{\bf Rmpi} is such a rich, complex package that it is best to introduce
+it in a simple manner, hence our use of the somewhat slower functions.
+
+\subsection{Analysis of the Code}
+\label{primecode}
+
+So, let's look at the code.  First, a bit of housekeeping.  Just as with
+{\bf snow}, we need to send the workers the functions they'll use:
+
+\begin{lstlisting}
+mpi.bcast.Robj2slave(dowork)
+mpi.bcast.Robj2slave(dosieve)
+\end{lstlisting}
+
+Next, we get the ball rolling, by sending data to the first worker:
+
+\begin{lstlisting}
+odds <- seq(from=3,to=n,by=2)
+nodd <- length(odds)
+# send odds to node 1, in chunks (before starting workers)
+startmsg <- seq(from=1,to=nodd,by=msgsize)
+for (s in startmsg) {
+   rng <- s:min(s+msgsize-1,nodd)
+   mpi.send.Robj(odds[rng],tag=0,dest=1)
+}
+# send end-data sentinel
+mpi.send.Robj(NA,tag=0,dest=1)
+\end{lstlisting}
+
+Remember, our prime finding algorithm consists of first eliminating
+multiples of 2, then of 3 and so on.  Here the manager takes that first
+step.
+
+Note the fact that the {\bf for} loop implements our plan for the
+manager to send out the odd numbers in chunks, rather than all at once.
+This is crucial to parallelization.  If we don't use the advanced (and
+difficult) technique of nonblocking I/O (Section \ref{nonblock}), then
+sending out the entire vector {\bf odds}, and acting similarly at the
+workers, would give us no parallelism at all; we would have only one
+worker doing ``crossing out'' at a time.  By sending data in chunks, we
+can keep everyone busy at once, as soon as the pipeline fills.  
+
+As noted earlier, the parameter {\bf msgsize} controls the tradeoff
+between the computation/communication overlap, and the overhead of
+launching a message.  A larger value means fewer times we pay the
+latency price, but less parallelism.
+
+Note that each worker needs to know when there will be no further input
+from its predecessor.  Sending an NA value serves that purpose.
+
+In the call to {\bf mpi.send.Robj()}, the argument {\bf tag=0} means we
+are considering this message to be of type 0.  Message types are
+programmer-defined, and we only have one kind of message here.  But in
+some applications we might define several different types.  MPI gives
+the receiver the ability to receive the next message of a specified
+type, or to receive any message without regard to type and then ask MPI
+what type it is.
+
+The argument {\bf dest=1} means, ``send this message to process 1,''
+i.e. the first worker.  Since MPI numbers processes starting from 0
+rather than 1, {\bf Rmpi} does the same, with the manager being
+process 0.
+
+Next the manager starts up the workers.  Technically, they have already
+been running, say by an earlier call to the {\bf Rmpi} function {\bf
+mpi.spawn.Rslaves()}, but they are not doing any useful work yet.
+Instead, they are executing calls to {\bf mpi.bcast.cmd()}.  Each time a
+worker makes such a call, it must be matched by the manager, as we see
+in the next line of manager code:
+
+\begin{lstlisting}
+mpi.bcast.cmd(dowork,n,divisors,msgsize)
+\end{lstlisting}
+
+Just as there must be a receive operation for every send, the manager
+and workers must all execute this call.  This makes the name of the
+function a little confusing, because it sounds like all the processes
+are broadcasting, but it means they are all {\it participating} in a
+broadcast operation.  Here the manager is doing the broadcast, and the
+workers are receiving that broadcast.
+
+By the way, this is an example of {\it remote procedure call}, in which
+one process in a parallel program invokes a function call in another.
+
+The command broadcast by the manager here tells the workers to execute
+{\bf dowork(n,divisors,msgsize)}.  They will thus now be doing useful
+work, in the sense that they are now running the application, though
+they still must wait to receive their data.
+
+Eventually the last worker will send the final list of primes back to
+the manager, which will receive it, and return the result to the caller:
+
+\begin{lstlisting}
+lastnode <- mpi.comm.size()-1
+c(2,mpi.recv.Robj(tag=0,source=lastnode))
+\end{lstlisting}
+
+The function {\bf mpi.comm.size()} returns the {\it communicator size},
+the total number of processes, including the manager.  Recalling that
+the latter is process 0, we see that the last worker's process number
+will be the communicator size minus 1.  In more advanced MPI
+applications, we can several communicators, i.e. several groups of
+processes, rather than just one, our case here.  A broadcast then only
+means transmitting a message to all processes in that communicator.
+
+So, what about {\bf dowork()}, the function executed by the workers?
+First, note that worker i must receive data from worker i-1 and send
+data to worker i+1.  Thus the worker needs to know its process number,
+or {\it rank} in MPI parlance:
+
+\begin{lstlisting}
+me <- mpi.comm.rank()
+\end{lstlisting}
+
+Now the worker must decide which of the divisors it will be responsible
+for.  This will be a standard chunking operation:
+
+\begin{lstlisting}
+ld <- length(divisors)
+tmp <- floor(ld / lastnode)
+mystart <- (me-1) * tmp + 1
+myend <- mystart + tmp - 1
+if (me == lastnode) myend <- ld
+mydivs <- divisors[mystart:myend]
+\end{lstlisting}
+
+An alternative would have been to use {\bf mpi.scatter()}, distributing
+the vector {\bf divisors} via a scatter operation.  Since the {\bf
+divisors} vector will be short, this approach wouldn't give us a
+performance boost, but it would make for much shorter code than the
+above.
+
+The heart of {\bf dowork()} is a large {\bf repeat} loop, in which the
+worker repeatedly receives data from its predecessor, 
+
+\begin{lstlisting}
+msg <- mpi.recv.Robj(tag=0,source=me-1)
+\end{lstlisting}
+
+does the necessary ``crossing out,'' 
+
+\begin{lstlisting}
+sieveout <- dosieve(msg,mydivs)
+\end{lstlisting}
+
+and sends the result to its successor worker,
+
+\begin{lstlisting}
+mpi.send.Robj(sieveout,tag=0,dest=me+1)
+\end{lstlisting}
+
+In the case of the final worker, it accumulates its ``crossing out''
+results in a vector {\bf out},
+
+\begin{lstlisting}
+sieveout <- dosieve(msg,mydivs)
+out <- c(out,sieveout)
+\end{lstlisting}
+
+which it sends to the manager, process 0, at the end:
+
+\begin{lstlisting}
+mpi.send.Robj(out,tag=0,dest=0)
+\end{lstlisting}
+
+The ``crossing out'' function, {\bf dosieve()} is straightforward, but
+note that we do try to make good use of vectorization:
+
+\begin{lstlisting}
+x[x !=0 & nums > d & nums %% d == 0] <- 0
+\end{lstlisting}
+
+\subsection{Memory Allocation Issues}
+\label{memallocissues}
+
+Memory allocation is a major issue, both in this application and
+many others, thus worth spending some extra here.  The problem is that
+when a message arrives at a process, {\bf Rmpi} needs to have a place to
+put it.  If we call {\bf mpi.recv()}, we must set up a buffer for it,
+e.g.
+
+\begin{lstlisting}
+b <- double(100000)
+b <- mpi.recv(b,2,type=0)
+\end{lstlisting}
+
+If the receive call is within a loop, the overhead of repeatedly setting
+up buffer space may be substantial.  This of course would be remedied by
+moving the statement
+
+\begin{lstlisting}
+b <- double(100000)
+\end{lstlisting}
+
+to a position preceding the loop.
+
+With {\bf mpi.recv.Robj()}, this memory allocation overhead occurs
+``invisibly.''  If the function is called from within a loop, there
+is potentially a reallocation at every iteration.
+
+Thus we may attain better efficiecy from {\bf mpi.recv()} than from {\bf
+mpi.recv.Robj()}.  (As mentioned earlier, the latter also suffers some
+slowdown from serialization.)
+
+On the other hand, if we use {\bf mpi.recv()} and set the memory
+allocation before the loop, we must allocate enough memory for the
+largest message that might be received.  This may be wasteful of memory,
+and if memory space is an issue, this is a problem that must be
+considered.
+
+\section{Some Other Rmpi Functions}
+
+MPI features many, many functions, and {\bf Rmpi} features interfaces to
+most of them.  In addition, {\bf Rmpi} adds some R-specific functions of
+its own.  Here we briefly introduce just a few.  
+
+{\bf Rmpi} includes scatter/gather operations, including ``vector''
+versions.  Here's code run on the manager, in interactive mode,
+illustrating the ordinary gather:
+
+First, let's set up some data, and check it using the remote execution
+function, {\bf mpi.remote.exec()}:
+\begin{lstlisting}
+> mpi.bcast.cmd(id <- mpi.comm.rank())  # all wrkrs do id <- mpi.comm.rank()
+> mpi.remote.exec(id)  # all wrkrs do id, with return value to mgr
+  X1 X2
+1  1  2
+> mpi.bcast.cmd(z <- id + runif(1))
+> mpi.remote.exec(z)
+        X1       X2
+1 1.964408 2.789881
+\end{lstlisting}
+
+Now let's do a gather operation on that data:
+
+\begin{lstlisting}
+> myrcv <- double(3)
+> mpi.bcast.cmd(mpi.gather(x=z,type=2,rdata=double(1)))
+> mpi.gather(x=2.5,type=2,rdata=myrcv)
+[1] 2.500000 1.964408 2.789881
+> myrcv
+[1] 2.500000 1.964408 2.789881
+\end{lstlisting}
+
+What just happened here?  First, it's important to understand that {\it
+all} the processes, both the workers and the manager, participate in the
+gather operation.  Thus we must pair a remote {\bf mpi.gather()} call to
+each worker, via {\bf mpi.bcast.cmd()}, with a similar {\bf
+mpi.gather()} call at the manager, which we did.
+
+Second, we are no longer working with objects here; we are working with
+the vectors themselves.  We are calling {\bf mpi.gather()}, rather than
+{\bf mpi.gather.Robj()}.  The difference is that in the latter, the
+result comes out as the return value from the call, while in the latter,
+the result is {\it placed into the {\bf rdata} argument} (and also
+returned).  Here we took {\bf myrcv} for that argument, making sure to
+allocate enough memory for {\bf myrcv} first.  
+
+(Of course, the fact that the result of the gather was both placed in
+{\bf myrc} {\it and} returned would be a problem if we had a large
+amount of data.  We can suppress that by making the call within {\bf
+invisible()}.)
+
+Note the different roles of some of the arguments above between the
+manager and the workers.  Since the result of the gather will go to the
+manager, not to the workers (an optional argument can be used to change
+this), the {\bf rdata} argument is meaningless for them; we merely put
+in a placeholder, a single dummy {\bf double}.  On the other hand, at
+the manager, we don't put in a dummy for the {\bf x} argument, because
+it too will be gathered, as seen in the final output.
+
+The fact that {\bf myrcv} at the manager is being directly written to is
+quite important.  We'll return to this point in Section \ref{adshared}.
+
+As mentioned, {\bf Rmpi} also interfaces to MPI's `v' variants of
+scatter/gather.  Here's an example on the scatter side:
+
+\begin{lstlisting}
+> z <- runif(3)
+> mpi.bcast.cmd(id <- mpi.comm.rank())
+> mpi.bcast.cmd(w <- double(id))
+> mpi.bcast.cmd(mpi.scatterv(x=double(1),scounts=0,type=2,rdata=w))
+> mpi.scatterv(x=z,scounts=c(0,1:2),type=2,rdata=double(1))
+[1] 0
+> mpi.remote.exec(w)
+$slave1
+[1] 0.6318092
+
+$slave2
+[1] 0.68236571 0.08751833
+\end{lstlisting}
+
+Here we wished to scatter the 3-element vector {\bf z} at the manager to
+the workers, with one element going to worker 1 and the other two to
+worker 2.  So we allocated space to vectors {\bf w} (the plural here
+alluding to the fact that each worker has its own {\bf w}), before doing
+the scatter operation.
+
+The difference between {\bf mpi.scatter()} and {\bf mpi.scatterv()} is
+that the latter allows the caller to specify what size chunk we wish to
+go to each of the recipients.  This is defined via the argument {\bf
+scounts} (in the case of {\bf mpi.gatherv()}, it's {\bf rcounts}).  In
+the call
+
+\begin{lstlisting}
+mpi.scatterv(x=z,scounts=c(0,1:2),type=2,rdata=double(1))
+\end{lstlisting}
+
+we are having the manager parcel out 0, 1 and 2 elements of {\bf z} to
+the manager itself and the two workers, respectively.  Since the manager
+will receive none of the data, we can allow the {\bf rdata} argument to
+be a placeholder.  The argument {\bf scounts} is also a placeholder in
+the call at the workers.
+
+As you can see, {\bf Rmpi} is more complex than the libraries we've seen
+so far.  But it can be very powerful in some settings.
+
+\section{Subtleties}
+
+In messge-passing systems, even an innocuous-looking operations
+can have lots of important subtleties.  This section will present an
+overview.
+
+\subsection{Blocking Vs. Nonblocking I/O}
+\label{nonblock}
+
+The call
+
+\begin{lstlisting}
+mpi.send(x,type=2,tag=0,dest=8)
+\end{lstlisting}
+
+send the data in {\bf x}.  But when does the call return?  The answer
+depends on the underlying MPI implementation.  In some implementations,
+probably most, the call returns as soon as the space {\bf x} is
+reusable, as follows.  {\bf Rmpi} will call MPI, which in turn will call
+network-send functions in the operating system.  That last step will
+involve copying the contents of {\bf x} to space in the OS, after which
+{\bf x} is reusable.  The point is that this may be long before the
+receiver has gotten the data.
+
+Other implementations of MPI, though, wait until the destination
+process, number 8 in the example above, has received the transmitted
+data.  The call to {\bf mpi.send()} at the source process won't return
+until this happens.
+
+Due to network delays, there could be a large performance difference
+between the two MPI implementations.  There are also possible
+implications for deadlock (Section \ref{deadlock}).
+
+In fact, even with the first kind of implementation, there may be some
+delay.  For such reasons, MPI offers {\it nonblocking} send and receive
+functions, for which {\bf Rmpi} provides the interfaces such as {\bf
+mpi.isend()} and {\bf mpi.irecv()}.  This way you can have your code get
+a send or receive started, do some other useful work, and then later
+check back to see if the action has been completed, using a function
+such as {\bf mpi.test()}.
+
+\subsection{The Dreaded Deadlock Problem}
+\label{deadlock}
+
+Consider code in which processes 3 and 8 trade data:
+
+\begin{lstlisting}
+me <- mpi.comm.rank()
+if (me == 3) {
+   mpi.send(x,type=2,tag=0,dest=8)
+   mpi.recv(y,type=2,tag=0,source=8)
+} else if (me == 8){
+   mpi.send(x,type=2,tag=0,dest=3)
+   mpi.recv(y,type=2,tag=0,source=3)
+}
+\end{lstlisting}
+
+If the MPI implementation has send operations block until
+the matching receive is posted, then this would create a {\it deadlock}
+problem, meaning that two processes are stuck, waiting for each
+other.  Here process 3 would start the send, but then wait for an
+acknowledgment from 8, while 8 would do the same and wait for 3.  They
+would wait forever.
+
+This arises in various other ways as well.  In our prime-finding example
+above, we had the manager launch the workers by the call
+
+\begin{lstlisting}
+mpi.bcast.cmd(dowork,n,divisors,msgsize)
+\end{lstlisting}
+
+This sends the command to the workers, then immediately returns.  By
+contrast,
+
+\begin{lstlisting}
+res <- mpi.remote.exec(dowork,n,divisors,msgsize)
+\end{lstlisting}
+
+would make the same call at the workers, but would wait until the
+workers were done with their work before returning (and then assigning
+the results to {\bf res}).  If we had made the alternative call to
+launch the workers, and then tried to send the odd numbers to process 1
+as we did above, we would have a deadlock.
+
+Deadlock can arise in shared-memory programming as well (Chapter
+\ref{chap:sharedmem}), but the message-passing paradigm is especially
+susceptible to it.  One must constantly beware of the possibility when
+writing message-passing code.
+
+So, what are the solutions?  In the example involving processes 3 and 8
+above, one could simply switch the ordering:
+
+\begin{lstlisting}
+me <- mpi.comm.rank()
+if (me == 3) {
+   mpi.send(x,type=2,tag=0,dest=8)
+   mpi.recv(y,type=2,tag=0,source=8)
+} else if (me == 8){
+   mpi.recv(y,type=2,tag=0,source=3)
+   mpi.send(x,type=2,tag=0,dest=3)
+}
+\end{lstlisting}
+
+MPI also has a combined send-receive operation, interfaced to from {\bf
+Rmpi} via {\bf mpi.sendrecv()}.
+
+Another way out of deadlock is to use the nonblocking sends and/or
+receives, at the cost of additional code complexity.
+

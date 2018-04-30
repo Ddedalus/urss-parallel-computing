@@ -1,0 +1,106 @@
+---
+title: "PC for DS with R: Introduction"
+output: html_notebook
+---
+
+
+```{r}
+# calculates average number of mutual links per each website pair (they link to the same 3rd party website)
+mutoutser1 <- function(links){ # links is (binary) adjacency matrix of a directed graph (website outlinks)
+  tot <- 0
+  nr <- nrow(links)
+  for( i in 1:(nr-1)){
+    tmp <- links[(i+1):nr, ] %*% links[, i] # matrix product
+  }
+  tot/(nr*(nr-1)/2)
+}
+```
+```{r}
+library(microbenchmark)
+sim <- function(nr, nc){ # test function
+  lnk <- matrix(sample(0:1, (nr*nc), replace=TRUE), nrow=nr)
+  # system.time(mutoutser1(lnk))
+  microbenchmark(mutoutser1(lnk), times = 10L)
+}
+```
+```{r}
+sim(1000, 1000)
+```
+
+Now it's time to introduce parallelism, using parallel/snow methods.
+
+```{r}
+library(parallel)
+
+doinchunk <- function(ichunk){
+  tot <-0
+  nr <- nrow(lnks)
+  for(i in ichunk){
+    tmp <- lnks[(i+1):nr,] %*% lnks[i,]
+    tot <- tot+sum(tmp)
+  }
+}
+
+mutoutpar <- function(cls, lnks){
+  nr <- nrow(lnks)
+  clusterExport(cls, "lnks")
+  ichunks <- 1:(nr-1)
+  tots <- mclapply(ichunks, doinchunk, mc.ncores=4)
+  Reduce(sum, tots)/nr
+}
+
+compareSerialParallel <- function(nr, cls, times){
+  lnks <<- matrix(sample(0:1, nr**2, replace = TRUE), nrow=nr)
+  # system.time(mutoutpar(cls, lnks))
+  microbenchmark(mutoutpar(cls, lnks), mutoutser1(lnks), unit="s", times=times)
+}
+
+# set up cluster as multicore
+initmc <- function(nworkers){
+  makeForkCluster(nnodes=nworkers)  # connection is made through network sockets anyway
+}
+```
+
+```{r}
+cl4 <- initmc(4)
+# compare parallel and serial execution times
+compareSerialParallel(200, cl4, 10)
+compareSerialParallel(500, cl4, 5)
+compareSerialParallel(1000, cl4, 2)
+stopCluster(cl4);
+```
+
+We see that network overhead generates overhead and for small sizes, sequential code runs up to and order of magnitude faster. Let's try to improve communication paterns a bit by chunking:
+
+```{r}
+mutoutparSplit <- function(cls, lnks){
+  nr <- nrow(lnks)
+  clusterExport(cls, "lnks")
+  ichunks <- clusterSplit(cls, 1:(nr-1))
+  tots <- mclapply(ichunks, doinchunk, mc.ncores=4)
+  Reduce(sum, tots)/nr
+}
+
+mutoutparRandomChunks <- function(cls, lnks){
+  nr <- nrow(lnks)
+  clusterExport(cls, "lnks")
+  ichunks <- clusterSplit(cls, sample(1:(nr-1), nr-1))
+  tots <- mclapply(ichunks, doinchunk, mc.ncores=4)
+  Reduce(sum, tots)/nr
+}
+```
+
+```{r}
+compareChunks <- function(nr, cls, times){
+  lnks <<- matrix(sample(0:1, nr**2, replace = TRUE), nrow=nr)
+  # system.time(mutoutpar(cls, lnks))
+  microbenchmark(mutoutpar(cls, lnks), mutoutparSplit(cls, lnks), mutoutparRandomChunks(cls, lnks), unit="s", times=times)
+}
+cl4 <- initmc(4)
+# compare parallel and serial execution times
+compareChunks(200, cl4, 10)
+compareChunks(500, cl4, 5)
+compareChunks(1000, cl4, 2)
+stopCluster(cl4);
+```
+
