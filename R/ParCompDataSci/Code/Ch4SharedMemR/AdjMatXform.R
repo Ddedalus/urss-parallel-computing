@@ -16,8 +16,10 @@ library(Rdsm)
 getlinksthread <- function(a,lnks,counts) {
    require(parallel)
    nr <- nrow(a)
-   # get my assigned portion of a
+   # get my assigned portion of a by splitting 1:m equally
    myidxs <- getidxs(nr)
+   # Below: 1 means rows; rw is placeholder argument for this locally defined function;
+   # which returns positions where condition is true
    myout <- apply(a[myidxs,],1,function(rw) which(rw==1))
    # myout[[i]] now lists the edges from node myidxs[1] + i - 1
    nmyedges <- Reduce(sum,lapply(myout,length))  # my total edges
