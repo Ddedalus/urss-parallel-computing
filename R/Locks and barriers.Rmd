@@ -1,0 +1,53 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+Locks & barriers
+This code tests what could go wrong when two workers acces the same variable at around the same time
+```{r}
+library(parallel)
+library(Rdsm)
+
+# worker code
+s <- function(n){
+  for ( i in 1:n){
+    tot[1, 1] <- tot[1, 1] + 1
+  }
+  tot[1, 1]
+}
+
+cl2 <- makeCluster(2)  # Rdsm is based on parallel cluster
+clusterExport(cl2, "s")
+mgrinit(cl2)  # Rdsm kicks in
+mgrmakevar(cl2, "tot", 1, 1)  # create a shared matrix
+tot[1, 1] <- 0
+ans <- clusterEvalQ(cl2, s(1000))
+tot[1, 1] # if everithing worked as hoped, this should be 2000
+stopCluster(cl2)
+
+```
+
+The resoult is disappointing as read and write to tot is not atomic in s. It may happen that two threads read at the same time (the same value), increment on their own and try to write the new value which is just +1, not +2...
+
+Let's try using locks to fix this problem
+
+```{r}
+sl <- function(n){  for ( i in 1:n){
+    rdsmlock("totlock")  # if this lock is in locked state, functions freezes until unlocked. Otherwise 
+    tot[1, 1] <- tot[1, 1] + 1
+    rdsmunlock("totlock")
+  }
+}
+
+cl2 <- makeCluster(2)  # Rdsm is based on parallel cluster
+invisible(mgrinit(cl2))  # Rdsm kicks in
+mgrmakevar(cl2, "tot", 1, 1)  # create a shared matrix
+tot[1, 1] <- 0
+mgrmakelock(cl2, "totlock")
+clusterExport(cl2, "sl")
+ans <- clusterEvalQ(cl2, sl(1000))
+tot[1, 1] # if everithing worked as hoped, this should be 2000
+stopCluster(cl2)
+```
+
