@@ -177,9 +177,10 @@ $(document).ready(function () {
 <p>Using multicore methods. This type of parallelism may be acheived in a single cluster. Doesn’t use network sockets for communication.</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShwYXJhbGxlbClcbmxpYnJhcnkobWljcm9iZW5jaG1hcmspXG5kb2luY2h1bmsgPC0gZnVuY3Rpb24oc3RhcnQsIGNodW5rcywgbG5rcyl7XG4gIHRvdCA8LTBcbiAgbnIgPC0gbnJvdyhsbmtzKVxuICBmb3IoaSBpbiAoc3RhcnQ6bWluKHN0YXJ0LTEgKyBjaHVua3MsIG5yb3cobG5rcyktMikpKXtcbiAgICB0bXAgPC0gbG5rc1soaSsxKToobnItMSksXSAlKiUgbG5rc1tpLF1cbiAgICB0b3QgPC0gdG90K3N1bSh0bXApXG4gIH1cbiAgdG90XG59XG5gYGAifQ== -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShwYXJhbGxlbClcbmxpYnJhcnkobWljcm9iZW5jaG1hcmspXG5cbmRvaW5jaHVuayA8LSBmdW5jdGlvbihzdGFydCwgY2h1bmtzLCBsbmtzKXtcbiAgdG90IDwtMFxuICBuciA8LSBucm93KGxua3MpXG4gIGZvcihpIGluIChzdGFydDptaW4oc3RhcnQtMSArIGNodW5rcywgbnJvdyhsbmtzKS0yKSkpe1xuICAgIHRtcCA8LSBsbmtzWyhpKzEpOihuci0xKSxdICUqJSBsbmtzW2ksXVxuICAgIHRvdCA8LSB0b3Qrc3VtKHRtcClcbiAgfVxuICB0b3Rcbn1cbmBgYCJ9 -->
 <pre class="r"><code>library(parallel)
 library(microbenchmark)
+
 doinchunk &lt;- function(start, chunks, lnks){
   tot &lt;-0
   nr &lt;- nrow(lnks)
@@ -195,12 +196,13 @@ doinchunk &lt;- function(start, chunks, lnks){
 <p>Two scheduling systems: 1. Assign all jobs at the beggining by round robin 2. Dynamically assign chunks of 5 jobs when worker returns previous result</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubW9wUHJlc2NoZWR1bGUgPC0gZnVuY3Rpb24obG5rcywgY29yZXMpe1xuICBuciA8LSBucm93KGxua3MpXG4gIHRvdHMgPC0gbWNsYXBwbHkoMToobnItMSksIGRvaW5jaHVuaywgMSwgbG5rcywgbWMuY29yZXM9Y29yZXMsIG1jLnByZXNjaGVkdWxlID0gVClcbiAgUmVkdWNlKHN1bSwgdG90cykvbnJcbn1cbm1vcER5bmFtaWMgPC0gZnVuY3Rpb24obG5rcywgY29yZXMsIGNodW5rKXtcbiAgbnIgPC0gbnJvdyhsbmtzKVxuICBpY2h1bmtzIDwtIHNlcSgxLCBuci0xLCBjaHVuaylcbiAgdG90cyA8LSBtY2xhcHBseShpY2h1bmtzLCBkb2luY2h1bmssIGNodW5rLCBsbmtzLCBtYy5jb3Jlcz1jb3JlcywgbWMucHJlc2NoZWR1bGUgPSBGKVxuICBSZWR1Y2Uoc3VtLCB0b3RzKS9uclxufVxuYGBgIn0= -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubW9wUHJlc2NoZWR1bGUgPC0gZnVuY3Rpb24obG5rcywgY29yZXMpe1xuICBuciA8LSBucm93KGxua3MpXG4gIHRvdHMgPC0gbWNsYXBwbHkoMToobnItMSksIGRvaW5jaHVuaywgMSwgbG5rcywgbWMuY29yZXM9Y29yZXMsIG1jLnByZXNjaGVkdWxlID0gVClcbiAgUmVkdWNlKHN1bSwgdG90cykvbnJcbn1cblxubW9wRHluYW1pYyA8LSBmdW5jdGlvbihsbmtzLCBjb3JlcywgY2h1bmspe1xuICBuciA8LSBucm93KGxua3MpXG4gIGljaHVua3MgPC0gc2VxKDEsIG5yLTEsIGNodW5rKVxuICB0b3RzIDwtIG1jbGFwcGx5KGljaHVua3MsIGRvaW5jaHVuaywgY2h1bmssIGxua3MsIG1jLmNvcmVzPWNvcmVzLCBtYy5wcmVzY2hlZHVsZSA9IEYpXG4gIFJlZHVjZShzdW0sIHRvdHMpL25yXG59XG5gYGAifQ== -->
 <pre class="r"><code>mopPreschedule &lt;- function(lnks, cores){
   nr &lt;- nrow(lnks)
   tots &lt;- mclapply(1:(nr-1), doinchunk, 1, lnks, mc.cores=cores, mc.preschedule = T)
   Reduce(sum, tots)/nr
 }
+
 mopDynamic &lt;- function(lnks, cores, chunk){
   nr &lt;- nrow(lnks)
   ichunks &lt;- seq(1, nr-1, chunk)
@@ -212,38 +214,17 @@ mopDynamic &lt;- function(lnks, cores, chunk){
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29tcGFyZUNodW5rcyA8LSBmdW5jdGlvbihuciwgdGltZXMsIGNodW5rPTEwKXtcbiAgbG5rcyA8LSBtYXRyaXgoc2FtcGxlKDA6MSwgbnIqKjIsIHJlcGxhY2UgPSBUUlVFKSwgbnJvdz1ucilcbiAgbWljcm9iZW5jaG1hcmsobW9wRHluYW1pYyhsbmtzLCA0LCBjaHVuayksIG1vcFByZXNjaGVkdWxlKGxua3MsIDQpLCB1bml0PVwic1wiLCB0aW1lcz10aW1lcylcbn1cbiMgY29tcGFyZSBwYXJhbGxlbCBhbmQgc2VyaWFsIGV4ZWN1dGlvbiB0aW1lc1xuY29tcGFyZUNodW5rcygxMDAsIDIwKVxuYGBgIn0= -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29tcGFyZUNodW5rcyA8LSBmdW5jdGlvbihuciwgdGltZXMsIGNodW5rPTEwKXtcbiAgbG5rcyA8LSBtYXRyaXgoc2FtcGxlKDA6MSwgbnIqKjIsIHJlcGxhY2UgPSBUUlVFKSwgbnJvdz1ucilcbiAgbWljcm9iZW5jaG1hcmsobW9wRHluYW1pYyhsbmtzLCA0LCBjaHVuayksIG1vcFByZXNjaGVkdWxlKGxua3MsIDQpLCB1bml0PVwic1wiLCB0aW1lcz10aW1lcylcblxufVxuIyBjb21wYXJlIHBhcmFsbGVsIGFuZCBzZXJpYWwgZXhlY3V0aW9uIHRpbWVzXG5jb21wYXJlQ2h1bmtzKDEwMCwgMjApXG5jb21wYXJlQ2h1bmtzKDIwMCwgMTApXG5jb21wYXJlQ2h1bmtzKDQwMCwgNSlcbmBgYCJ9 -->
 <pre class="r"><code>compareChunks &lt;- function(nr, times, chunk=10){
   lnks &lt;- matrix(sample(0:1, nr**2, replace = TRUE), nrow=nr)
   microbenchmark(mopDynamic(lnks, 4, chunk), mopPreschedule(lnks, 4), unit=&quot;s&quot;, times=times)
+
 }
 # compare parallel and serial execution times
-compareChunks(100, 20)</code></pre>
+compareChunks(100, 20)
+compareChunks(200, 10)
+compareChunks(400, 5)</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiVW5pdDogc2Vjb25kc1xuICAgICAgICAgICAgICAgICAgICAgICBleHByICAgIG1pbiAgICAgbHEgICBtZWFuIG1lZGlhbiAgICAgdXEgICAgbWF4IG5ldmFsXG4gbW9wRHluYW1pYyhsbmtzLCA0LCBjaHVuaykgMC4wNTU4IDAuMDYyNiAwLjA3NTcgMC4wNjgzIDAuMDg0NyAwLjEyMjcgICAgMjBcbiAgICBtb3BQcmVzY2hlZHVsZShsbmtzLCA0KSAwLjAzMzIgMC4wMzU2IDAuMDM5NyAwLjAzODMgMC4wNDE5IDAuMDYzMSAgICAyMFxuIn0= -->
-<pre><code>Unit: seconds
-                       expr    min     lq   mean median     uq    max neval
- mopDynamic(lnks, 4, chunk) 0.0558 0.0626 0.0757 0.0683 0.0847 0.1227    20
-    mopPreschedule(lnks, 4) 0.0332 0.0356 0.0397 0.0383 0.0419 0.0631    20</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29tcGFyZUNodW5rcygyMDAsIDEwKVxuYGBgIn0= -->
-<pre class="r"><code>compareChunks(200, 10)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiVW5pdDogc2Vjb25kc1xuICAgICAgICAgICAgICAgICAgICAgICBleHByICAgIG1pbiAgICBscSAgbWVhbiBtZWRpYW4gICAgdXEgICBtYXggbmV2YWxcbiBtb3BEeW5hbWljKGxua3MsIDQsIGNodW5rKSAwLjIxMTAgMC4yNDAgMC4yNTEgIDAuMjUxIDAuMjcxIDAuMjgwICAgIDEwXG4gICAgbW9wUHJlc2NoZWR1bGUobG5rcywgNCkgMC4wOTczIDAuMTA3IDAuMTQwICAwLjEyMiAwLjE3NSAwLjIzMiAgICAxMFxuIn0= -->
-<pre><code>Unit: seconds
-                       expr    min    lq  mean median    uq   max neval
- mopDynamic(lnks, 4, chunk) 0.2110 0.240 0.251  0.251 0.271 0.280    10
-    mopPreschedule(lnks, 4) 0.0973 0.107 0.140  0.122 0.175 0.232    10</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29tcGFyZUNodW5rcyg0MDAsIDUpXG5gYGAifQ== -->
-<pre class="r"><code>compareChunks(400, 5)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiVW5pdDogc2Vjb25kc1xuICAgICAgICAgICAgICAgICAgICAgICBleHByICAgbWluICAgIGxxICBtZWFuIG1lZGlhbiAgICB1cSAgIG1heCBuZXZhbFxuIG1vcER5bmFtaWMobG5rcywgNCwgY2h1bmspIDAuNzkxIDAuODA5IDAuODUyICAwLjgxNyAwLjg2MSAwLjk4MSAgICAgNVxuICAgIG1vcFByZXNjaGVkdWxlKGxua3MsIDQpIDAuNjA3IDAuNjA5IDAuNjE3ICAwLjYxNSAwLjYyMiAwLjYyOSAgICAgNVxuIn0= -->
-<pre><code>Unit: seconds
-                       expr   min    lq  mean median    uq   max neval
- mopDynamic(lnks, 4, chunk) 0.791 0.809 0.852  0.817 0.861 0.981     5
-    mopPreschedule(lnks, 4) 0.607 0.609 0.617  0.615 0.622 0.629     5</code></pre>
-<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 
 <div id="rmd-source-code">LS0tCnRpdGxlOiAiUEMgZm9yIERTIHdpdGggUjogSW50cm9kdWN0aW9uIgpvdXRwdXQ6IGh0bWxfbm90ZWJvb2sKLS0tClByb2JsZW0gc3R1ZGllZDogYXZlcmFnZSBudW1iZXIgb2YgY29tbW9uIG91dGxpbmtzIGluIGEgZ3JhcGggZ2l2ZW4gYnkgYWRqYWNlbmN5IG1hdHJpeC4KClVzaW5nIG11bHRpY29yZSBtZXRob2RzLiBUaGlzIHR5cGUgb2YgcGFyYWxsZWxpc20gbWF5IGJlIGFjaGVpdmVkIGluIGEgc2luZ2xlIGNsdXN0ZXIuIERvZXNuJ3QgdXNlIG5ldHdvcmsgc29ja2V0cyBmb3IgY29tbXVuaWNhdGlvbi4KCmBgYHtyfQpsaWJyYXJ5KHBhcmFsbGVsKQpsaWJyYXJ5KG1pY3JvYmVuY2htYXJrKQoKZG9pbmNodW5rIDwtIGZ1bmN0aW9uKHN0YXJ0LCBjaHVua3MsIGxua3MpewogIHRvdCA8LTAKICBuciA8LSBucm93KGxua3MpCiAgZm9yKGkgaW4gKHN0YXJ0Om1pbihzdGFydC0xICsgY2h1bmtzLCBucm93KGxua3MpLTIpKSl7CiAgICB0bXAgPC0gbG5rc1soaSsxKToobnItMSksXSAlKiUgbG5rc1tpLF0KICAgIHRvdCA8LSB0b3Qrc3VtKHRtcCkKICB9CiAgdG90Cn0KYGBgClR3byBzY2hlZHVsaW5nIHN5c3RlbXM6CjEuIEFzc2lnbiBhbGwgam9icyBhdCB0aGUgYmVnZ2luaW5nIGJ5IHJvdW5kIHJvYmluCjIuIER5bmFtaWNhbGx5IGFzc2lnbiBjaHVua3Mgb2YgNSBqb2JzIHdoZW4gd29ya2VyIHJldHVybnMgcHJldmlvdXMgcmVzdWx0CmBgYHtyfQptb3BQcmVzY2hlZHVsZSA8LSBmdW5jdGlvbihsbmtzLCBjb3Jlcyl7CiAgbnIgPC0gbnJvdyhsbmtzKQogIHRvdHMgPC0gbWNsYXBwbHkoMToobnItMSksIGRvaW5jaHVuaywgMSwgbG5rcywgbWMuY29yZXM9Y29yZXMsIG1jLnByZXNjaGVkdWxlID0gVCkKICBSZWR1Y2Uoc3VtLCB0b3RzKS9ucgp9Cgptb3BEeW5hbWljIDwtIGZ1bmN0aW9uKGxua3MsIGNvcmVzLCBjaHVuayl7CiAgbnIgPC0gbnJvdyhsbmtzKQogIGljaHVua3MgPC0gc2VxKDEsIG5yLTEsIGNodW5rKQogIHRvdHMgPC0gbWNsYXBwbHkoaWNodW5rcywgZG9pbmNodW5rLCBjaHVuaywgbG5rcywgbWMuY29yZXM9Y29yZXMsIG1jLnByZXNjaGVkdWxlID0gRikKICBSZWR1Y2Uoc3VtLCB0b3RzKS9ucgp9CmBgYAoKYGBge3J9CmNvbXBhcmVDaHVua3MgPC0gZnVuY3Rpb24obnIsIHRpbWVzLCBjaHVuaz0xMCl7CiAgbG5rcyA8LSBtYXRyaXgoc2FtcGxlKDA6MSwgbnIqKjIsIHJlcGxhY2UgPSBUUlVFKSwgbnJvdz1ucikKICBtaWNyb2JlbmNobWFyayhtb3BEeW5hbWljKGxua3MsIDQsIGNodW5rKSwgbW9wUHJlc2NoZWR1bGUobG5rcywgNCksIHVuaXQ9InMiLCB0aW1lcz10aW1lcykKCn0KIyBjb21wYXJlIHBhcmFsbGVsIGFuZCBzZXJpYWwgZXhlY3V0aW9uIHRpbWVzCmNvbXBhcmVDaHVua3MoMTAwLCAyMCkKY29tcGFyZUNodW5rcygyMDAsIDEwKQpjb21wYXJlQ2h1bmtzKDQwMCwgNSkKYGBgCg==</div>

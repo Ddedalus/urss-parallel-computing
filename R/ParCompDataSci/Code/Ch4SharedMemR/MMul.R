@@ -19,3 +19,8 @@ test <- function(cls) {
    clusterEvalQ(cls,mmulthread(a,b,c))
    print(c[,])
 }
+
+library(parallel)
+cl4 <- makeForkCluster()
+library(Rdsm)
+test(cl4)
