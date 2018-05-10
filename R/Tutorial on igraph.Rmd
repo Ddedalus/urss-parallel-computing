@@ -1,0 +1,74 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+See this amazing tutorial for details of igraph: http://kateto.net/networks-r-igraph
+```{r}
+library(igraph)
+# graph is defined by edges, given as in, out, in, out ... list
+g2 <- graph( edges=c(1,2, 2,3, 3, 1), n=2 )
+plot(g2)
+# ?igraph.plotting
+```
+
+```{r}
+path <- "./asp/Networks/n1.edges"
+mydata <- read.table(path, sep=" ", skip=2)
+vlist <- Reduce(c, t(mydata))  # this must be improved for large datasets...
+g <- graph(vlist+1) # igraph doesn't like 0s as ids
+plot(g)
+
+# even a simpler way of doing the same thing with library function. Further columns of the df are treated as edge attributes. May provide vertices=df as well
+net <- graph_from_data_frame(d=mydata, directed=T)
+plot(net)
+```
+We can play a bit with various representations of a graph:
+```{r}
+g
+E(g)
+V(g)
+g[]
+```
+And easily add some properties of edges and nodes alike:
+```{r}
+V(g)$name <- 15:29
+plot(g)
+g$name <- "n1"
+graph_attr(g)
+```
+Note there are some keyword attributes: name, weight and type which alter execution of some methods by indicating the graph is named, weighted or bipartite respectively.
+
+Some useful graph constructors:
+```{r}
+plot(make_full_graph(10))
+s <- make_star(10)
+plot(s, layout=layout_in_circle)
+plot(rewire(s, each_edge(prob=0.7)), layout=layout_in_circle) # simple method for changing the graph a bit
+
+tr <- make_tree(20, children = 3, mode = "in")
+plot(tr, vertex.label=NA)
+
+plot(s %du% tr, vertex.size=10, vertex.label=NA) # disjoint union
+```
+Some nice export features:
+```{r}
+as_edgelist(net, names=T)
+
+as_adjacency_matrix(net)
+
+as_data_frame(net, what="edges")
+```
+But let's perform some maths instead:
+```{r}
+diameter(net) # the longest distance in this graph
+get_diameter(net) # also return one of the paths
+mean_distance(net, directed=F)
+distances(net)
+```
+```{r}
+deg <- degree(net, mode="all")
+
+plot(net, vertex.size=deg*5)
+```
+
