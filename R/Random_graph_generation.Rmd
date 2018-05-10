@@ -1,0 +1,80 @@
+---
+title: "Analysis of POETS graph"
+output: html_notebook
+---
+
+### Analysing existing dataset
+First, let's import one of the POETS graphs:
+```{r}
+library(igraph)
+library(magrittr) # pipe operator
+setwd("~/Code/Warwick/BSP/R/")
+data <- read.table("./asp/Networks/n5.edges", sep=" ", skip=2)
+n5 <- graph_from_data_frame(d = data, directed=T)
+rm(data) # remove name from workspace to reduce clutter
+```
+
+And calculate some descriptive statistics:
+```{r}
+n5$in_deg <- degree(n5, mode = "in")  # in-degrees
+n5$out_deg <- degree(n5, mode = "out")
+n5$v <- gorder(n5)  # number of vertices
+n5$e <- gsize(n5)  # number of edges
+```
+In degree ploted in red, out degree in green:
+```{r}
+{
+plot(table(n5$in_deg), type = "p", col=2, ylab = "occurences", xlab = "degree")
+points(table(n5$out_deg), type = "p", col=3)
+}
+```
+Exponential distribution?
+```{r}
+fitdist(n5$in_deg, "exp") %>% plot
+```
+The Q-Q plot shows our data is heavy-tailed. Another guesss is log-normal distribution:
+```{r}
+in_lnorm_fit <- fitdist(n5$in_deg + 1, "lnorm")
+plot(in_lnorm_fit)
+```
+Nearly perfect! What about `n5$out_degree`?
+```{r}
+fit_lnorm_out <- fitdist(n5$out_deg + 1, "lnorm")
+plot(fit_lnorm_out)
+```
+Well, a tiny bit of tweaking the shift factor would make the quartiles match even better.
+
+## Generate random graphs
+We have enough information to generate a random graph with similar characteristics:
+```{r}
+fit <- fitdist(degree(n5) + 1, "lnorm")
+new_degs <- rlnorm(n5$v, mean = fit$estimate["meanlog"],
+                         sd = fit$estimate["meanlog"]) %>% round
+new_degs[new_degs > n5$v] <- n5$v # trim meaningless values
+if(sum(new_degs) %% 2 != 0){ new_degs[1] <- new_degs[1] + 1}
+g5 <- sample_degseq(out.deg = new_degs) %>% as.directed(mode = "arbitrary") # generated undirected graph! Fix?
+```
+
+The new distribution is comparable to the original one:
+```{r}
+fitdist(degree(g5) + 1, "lnorm") %>% plot
+```
+
+```{r}
+scaledRandomGraph <- function(original, new_v){
+  fit <- fitdist(degree(original) + 1, "lnorm")
+  new_degs <- rlnorm(new_v,
+                     mean = fit$estimate["meanlog"],
+                     sd = fit$estimate["meanlog"]) %>% round
+  new_degs[new_degs > new_v] <- new_v # trim meaningless values
+  if(sum(new_degs) %% 2 != 0){ new_degs[1] <- new_degs[1] + 1} # undirected graph must have even sum of orders
+  g5 <- sample_degseq(out.deg = new_degs) %>% as.directed(mode = "arbitrary") # generated undirected graph! Fix?
+}
+
+g1 <- scaledRandomGraph(n5, 15)
+plot(g1, layout = layout_in_circle) # self loops to be resolved...
+```
+```{r}
+
+```
+
