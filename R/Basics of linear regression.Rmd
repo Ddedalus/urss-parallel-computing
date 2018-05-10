@@ -1,0 +1,67 @@
+---
+title: "Basics of linear regression"
+output: html_notebook
+---
+
+### Dataset and first model
+
+```{r}
+plot(cars, col='blue', pch=20, cex=2,
+     main="Relationship between Speed and Stopping Distance for 50 Cars",
+     xlab="Speed in mph",
+     ylab="Stopping Distance in feet")
+```
+```{r}
+set.seed(122) # let random numbers be the same every time...
+speed.c = scale(cars$speed, center=TRUE, scale=FALSE) # common mith says this improves predictions...
+mod1 = lm(formula = dist ~ speed.c, data = cars)   # model distance as linear function of speed
+summary(mod1)
+```
+
+Check [this article](https://feliperego.github.io/blog/2015/10/23/Interpreting-Model-Output-In-R) for more details.
+
+### Glossary:
+1. **residuals**  
+Are differences between actual observation and prediction of the model.  
+Expectation: good model has mean residual close to zero
+1. **coefficients**  
+    One per column in data. Intercept = free term. Standard error describes uncertainity of every coefficient estimate. Expectation: small Std. error
+1. **t-value**  
+  How many standard deviations from 0 is this coefficient? Being far from zero suggests existence of a relationship. See *Null Hypothesis*.
+1. **Pr(>t) or p-value**  
+  Probability that observed value is larger than t-value. A small p-value indicates that it is unlikely we will observe a relationship between the predictor and response due to chance. Expectation: as low as possible, 0.05 being a common cut-off.
+  
+1. **Residual Standard error**  
+Is the average amount that the response will deviate from the true regression line.
+
+
+1. **Multiple R-squared**  
+It always lies between 0 and 1 - it represents what fraction of the observed variance is "explained" by the model. Expectation: a number close to 1.   
+*Warning*: in multiple regression settings, the $R^2$ will always increase as more variables are included in the model. **Adjusted** $R^2$ compensates for that.
+
+1. **F-static**  
+Another indicator of relationship. Obtained by comparing the full model with models obtained from subsets of predictor variables.  
+The further the F-statistic is from 1 the better it is.  
+Generally, when the number of data points is large, an F-statistic that is only a little bit larger than 1 is already sufficient to reject the null hypothesis.
+
+### Polynomial regression
+**Problem:** not everything is connected by linear functions of variables.  
+**Solution:** introduce models with higher powers of predictor variables i.e.  
+$y = \beta_0 + \beta_1 x + \beta_2 x^2$  
+**Problems:**  
+1. $x$ and $x^2$ are often correlated, spoiling predictive power of the model.  
+2. Overfitting with too high degree.  
+    * may try to increase max degree until coefficients become insignifficant, yet:  
+    * adding extra term changes all the coefficients because they're correlated  
+**Solution:** use orthogonal polynomials of each random variable.
+```{r}
+linx <- rep(seq(-1, 1, 0.01), 5)
+p <- poly(linx, 5)
+matplot(linx, p, type="l")
+```
+Each column of `poly()` contains linear combinations of the sequence $(x, x^2, x^3)$ independent of each other and of constant vector:  
+```{r}
+e <- rep(1, length(linx)) / sqrt(length(linx)) # constant vector with unit absolute value
+p <- cbind(e,poly(linx*5, 3))
+zapsmall(crossprod(p))
+```
