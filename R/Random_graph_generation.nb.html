@@ -178,23 +178,9 @@ $(document).ready(function () {
 <p>First, let’s import one of the POETS graphs:</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShpZ3JhcGgpXG5gYGAifQ== -->
-<pre class="r"><code>library(igraph)</code></pre>
-<!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiXG5BdHRhY2hpbmcgcGFja2FnZTog4oCYaWdyYXBo4oCZXG5cblRoZSBmb2xsb3dpbmcgb2JqZWN0cyBhcmUgbWFza2VkIGZyb20g4oCYcGFja2FnZTpzdGF0c+KAmTpcblxuICAgIGRlY29tcG9zZSwgc3BlY3RydW1cblxuVGhlIGZvbGxvd2luZyBvYmplY3QgaXMgbWFza2VkIGZyb20g4oCYcGFja2FnZTpiYXNl4oCZOlxuXG4gICAgdW5pb25cbiJ9 -->
-<pre><code>
-Attaching package: ‘igraph’
-
-The following objects are masked from ‘package:stats’:
-
-    decompose, spectrum
-
-The following object is masked from ‘package:base’:
-
-    union</code></pre>
-<!-- rnb-output-end -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShtYWdyaXR0cikgIyBwaXBlIG9wZXJhdG9yXG5zZXR3ZChcIn4vQ29kZS9XYXJ3aWNrL0JTUC9SL1wiKVxuZGF0YSA8LSByZWFkLnRhYmxlKFwiLi9hc3AvTmV0d29ya3Mvbm9kZXMxMDAwMC5lZGdlc1wiLCBzZXA9XCIgXCIsIHNraXA9Milcbm41IDwtIGdyYXBoX2Zyb21fZGF0YV9mcmFtZShkID0gZGF0YSwgZGlyZWN0ZWQ9VClcbnJtKGRhdGEpICMgcmVtb3ZlIG5hbWUgZnJvbSB3b3Jrc3BhY2UgdG8gcmVkdWNlIGNsdXR0ZXJcbmBgYCJ9 -->
-<pre class="r"><code>library(magrittr) # pipe operator
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShpZ3JhcGgpXG5saWJyYXJ5KG1hZ3JpdHRyKSAjIHBpcGUgb3BlcmF0b3JcbnNldHdkKFwifi9Db2RlL1dhcndpY2svQlNQL1IvXCIpXG5kYXRhIDwtIHJlYWQudGFibGUoXCIuL2FzcC9OZXR3b3Jrcy9ub2RlczEwMDAwLmVkZ2VzXCIsIHNlcD1cIiBcIiwgc2tpcD0yKVxubjUgPC0gZ3JhcGhfZnJvbV9kYXRhX2ZyYW1lKGQgPSBkYXRhLCBkaXJlY3RlZD1UKVxucm0oZGF0YSkgIyByZW1vdmUgbmFtZSBmcm9tIHdvcmtzcGFjZSB0byByZWR1Y2UgY2x1dHRlclxuYGBgIn0= -->
+<pre class="r"><code>library(igraph)
+library(magrittr) # pipe operator
 setwd(&quot;~/Code/Warwick/BSP/R/&quot;)
 data &lt;- read.table(&quot;./asp/Networks/nodes10000.edges&quot;, sep=&quot; &quot;, skip=2)
 n5 &lt;- graph_from_data_frame(d = data, directed=T)

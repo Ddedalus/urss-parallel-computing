@@ -3,36 +3,9 @@ title: "Timing machine"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
-
-```{r}
-tic("test")
-t  <- toc()
-system.time(Sys.sleep(2) )
-```
-
-```{r}
-  data.frame(c(1, 2, "flow", 1, 1.2), row.names = c("edges", "nodes", "algorithm", "processors", "elapsed"))
-f <- function() {
-  return(0)
-}
-f$input <- "bla"
-
-```
-```{r}
-# How to create a data frame: use column vectors to store intermediate results
- n = c(2, 3, 5) 
-s = c("aa", "bb", "cc") 
-b = c(TRUE, FALSE, TRUE) 
-df = data.frame(n, s, b)
-```
-
-
 ## Input generator
 ```{r}
-
+library(igraph)
 # fits lognormal distribution to a graph and returns function generating vector[size] of samples from that distribution
 lognormSampler <- function(original) {
   require(fitdistrplus)
@@ -46,8 +19,16 @@ lognormSampler <- function(original) {
 ```
 
 ```{r}
+algoDistances <- function(g, params) {
+  require(igraph)
+  distances(g)
+}
+```
+
+```{r}
 # return a graph with given size and edge distribution. InputGenerator when provided with distrSampler
 graphGenerator <- function(size, params) {
+  require(igraph)
   new_degs <-  params$distrSampler(size) %>% round
   new_degs[new_degs > size] <- size # trim meaningless values
   if(sum(new_degs) %% 2 != 0){ new_degs[1] <- new_degs[1] + 1} # undirected graph must have even sum of orders
@@ -58,35 +39,46 @@ graphGenerator <- function(size, params) {
 }
 ```
 
+## Run series of sizes
 ```{r}
 sizes <- c(2, 4, 6, 8, 100)
-# inputGenerator signature: f(size, params) returns input; algArgs will be passed as params
 # algo signature: a(input, params) output will be ignored; inputArgs will be passed as params
- runSizes <- function(algo, inputGenerator, sizes, timeLimit, algArgs = NULL, inputArgs = NULL) {
-  require(igraph)
-  startTime  <- system.time()
-  # definitions of output parameters:
-  edges <- numeric(length = length(sizes))
+# inputGenerator signature: f(size, params) returns input; algArgs will be passed as params
+ runSizes <- function(algo, inputGenerator, sizes, timeLimit, algArgs = c(), inputArgs = NULL) {
+  startTime  <- Sys.time()
+  edges <- numeric(length = length(sizes)) # breaks generality of this function. Fix it later
   nodes <- numeric(length = length(sizes))
   elapsed <- numeric(length = length(sizes))
   
-  for(i in 1:lenght(sizes)){
+  for(i in 1:length(sizes)){
     g <- inputGenerator(sizes[i], inputArgs)
-    elapsed[i] <- system.time({
+    elapsed[i] <- system.time(
       algo(g, algArgs)
-    })
-    nodes[i] <- gorder(g)
+    )["elapsed"]
+    nodes[i] <- gorder(g)  # replace with a generic function call
     edges[i] <- gsize(g)
-    if(system.time() - startTime > timeLimit){
+    if(difftime(Sys.time(), startTime, units = "secs") > timeLimit){
       elapsed <- elapsed[1:i]
-      nodes <- nodes[1:i]
+      nodes <- nodes[1:i]  # this renders difficult in implementation as generic
       edges <- edges[1:i]
+      print(c("Timed out at i=", i))
       break
     }
   }
   return(data.frame(edges, nodes, elapsed))
-  # add alg name, processors + architecture
+  # add alg name, processors + architecture later
 }
+```
+
+```{r}
+sizes <- seq(500,20000,by=200)
+sampler <- lognormSampler(n5)
+res <- runSizes(algoDistances, graphGenerator, sizes, 20, inputArgs = c(distrSampler = sampler), algArgs = c())
+saveRDS(res, file="from500to20000in5min.rds")
+```
+
+```{r}
+plot(res$nodes, res$elapsed)
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
