@@ -41,27 +41,31 @@ graphGenerator <- function(size, params) {
 
 ## Run series of sizes
 ```{r}
-sizes <- c(2, 4, 6, 8, 100)
 # algo signature: a(input, params) output will be ignored; inputArgs will be passed as params
 # inputGenerator signature: f(size, params) returns input; algArgs will be passed as params
  runSizes <- function(algo, inputGenerator, sizes, timeLimit, algArgs = c(), inputArgs = NULL) {
+  # pbI <- txtProgressBar(min = , max = length(sizes), style = 3)
+  pbTime <- txtProgressBar(min=0, max = timeLimit, style=3)
   startTime  <- Sys.time()
   edges <- numeric(length = length(sizes)) # breaks generality of this function. Fix it later
   nodes <- numeric(length = length(sizes))
   elapsed <- numeric(length = length(sizes))
-  
+  runtime <- 0
   for(i in 1:length(sizes)){
+    # setTxtProgressBar(pbI, i)
+    setTxtProgressBar(pbTime, runtime)
     g <- inputGenerator(sizes[i], inputArgs)
     elapsed[i] <- system.time(
       algo(g, algArgs)
     )["elapsed"]
     nodes[i] <- gorder(g)  # replace with a generic function call
     edges[i] <- gsize(g)
-    if(difftime(Sys.time(), startTime, units = "secs") > timeLimit){
+    runtime <- difftime(Sys.time(), startTime, units = "secs") 
+    if(runtime > timeLimit){
       elapsed <- elapsed[1:i]
       nodes <- nodes[1:i]  # this renders difficult in implementation as generic
       edges <- edges[1:i]
-      print(c("Timed out at i=", i))
+      message("\nTimed out at i=", i)
       break
     }
   }
@@ -71,14 +75,24 @@ sizes <- c(2, 4, 6, 8, 100)
 ```
 
 ```{r}
-sizes <- seq(500,20000,by=200)
+sizes <- seq(10000,10000,by=100)
 sampler <- lognormSampler(n5)
-res <- runSizes(algoDistances, graphGenerator, sizes, 20, inputArgs = c(distrSampler = sampler), algArgs = c())
+res <- runSizes(algoDistances, graphGenerator, sizes, 100, inputArgs = c(distrSampler = sampler), algArgs = c())
 saveRDS(res, file="from500to20000in5min.rds")
 ```
 
 ```{r}
 plot(res$nodes, res$elapsed)
+library(corrplot)
+res$square <- (res$nodes)^2
+n <- res$nodes
+res$cube <- (res$nodes)^3
+res$log <- log(res$nodes)
+res$nlog <- res$nodes * res$log
+cor(res$elapsed, cbind(poly(n, 5), n * log(n)))
+cor(res$elapsed, n * log(n))
+# n <- 1:1000
+matplot(n, cbind(n, n * log(n), n^2))
 ```
 
 Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
@@ -86,3 +100,12 @@ Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by press
 When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
 
 The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+```{r}
+nlfit <- lm(elapsed ~ nlog, data = res)
+print(nlfit)
+r <- seq(2000, to = 10000, by = 100)
+{predict(nlfit, data.frame("nlog" = r * log(r))) %>% plot(r, .)
+  lines(res$nodes, res$elapsed)
+}
+```
+
