@@ -17,11 +17,12 @@ rm(data) # remove name from workspace to reduce clutter
 And calculate some descriptive statistics:
 ```{r}
 n5$in_deg <- degree(n5, mode = "in")  # in-degrees
-n5$out_deg <- degree(n5, mode = "out")
+    n5$out_deg <- degree(n5, mode = "out")
 n5$v <- gorder(n5)  # number of vertices
 n5$e <- gsize(n5)  # number of edges
 ```
 In degree ploted in red, out degree in green:
+
 ```{r}
 {
 plot(table(n5$in_deg), type = "p", col=2, ylab = "occurences", xlab = "degree")
@@ -44,12 +45,18 @@ plot(fit_lnorm_out)
 ```
 Well, a tiny bit of tweaking the shift factor would make the quartiles match even better.
 
+Consider correlation between in and out degree:
+```{r}
+plot(degree(n5, mode = "in"), degree(n5, mode = "out"), type = "p")
+cor.test(degree(n5, mode = "in"), degree(n5, mode = "out"))
+```
+
 ## Generate random graphs
 We have enough information to generate a random graph with similar characteristics:
 ```{r}
 fit <- fitdist(degree(n5) + 1, "lnorm")
 new_degs <- rlnorm(n5$v, mean = fit$estimate["meanlog"],
-                         sd = fit$estimate["meanlog"]) %>% round
+                         sd = fit$estimate["sdlog"]) %>% round
 new_degs[new_degs > n5$v] <- n5$v # trim meaningless values
 if(sum(new_degs) %% 2 != 0){ new_degs[1] <- new_degs[1] + 1}
 g5 <- sample_degseq(out.deg = new_degs) %>% as.directed(mode = "arbitrary") # generated undirected graph! Fix?
@@ -62,19 +69,23 @@ fitdist(degree(g5) + 1, "lnorm") %>% plot
 
 ```{r}
 scaledRandomGraph <- function(original, new_v){
+  require(fitdistrplus)
   fit <- fitdist(degree(original) + 1, "lnorm")
-  new_degs <- rlnorm(new_v,
+    new_degs <- rlnorm(new_v,
                      mean = fit$estimate["meanlog"],
-                     sd = fit$estimate["meanlog"]) %>% round
+                     sd = fit$estimate["sdlog"]) %>% round
   new_degs[new_degs > new_v] <- new_v # trim meaningless values
   if(sum(new_degs) %% 2 != 0){ new_degs[1] <- new_degs[1] + 1} # undirected graph must have even sum of orders
-  g5 <- sample_degseq(out.deg = new_degs) %>% as.directed(mode = "arbitrary") # generated undirected graph! Fix?
+  g5 <- sample_degseq(out.deg = new_degs) %>%
+    as.directed(mode = "arbitrary") %>%  # generated undirected graph! Fix?
+    simplify(remove.loops = T)  # remove edges with from=to
 }
 
-g1 <- scaledRandomGraph(n5, 15)
-plot(g1, layout = layout_in_circle) # self loops to be resolved...
+g1 <- scaledRandomGraph(n5, gsize(n5))
+plot(g1, layout = layout_in_circle)
 ```
 ```{r}
-
+plot(degree(g5, mode = "in"), degree(n5, mode = "out"), type = "p")
+cor.test(degree(g5, mode = "in"), degree(g5, mode = "out"))
 ```
 
