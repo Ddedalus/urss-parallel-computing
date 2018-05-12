@@ -1,0 +1,96 @@
+---
+title: "Timing machine"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r}
+tic("test")
+t  <- toc()
+system.time(Sys.sleep(2) )
+```
+
+```{r}
+  data.frame(c(1, 2, "flow", 1, 1.2), row.names = c("edges", "nodes", "algorithm", "processors", "elapsed"))
+f <- function() {
+  return(0)
+}
+f$input <- "bla"
+
+```
+```{r}
+# How to create a data frame: use column vectors to store intermediate results
+ n = c(2, 3, 5) 
+s = c("aa", "bb", "cc") 
+b = c(TRUE, FALSE, TRUE) 
+df = data.frame(n, s, b)
+```
+
+
+## Input generator
+```{r}
+
+# fits lognormal distribution to a graph and returns function generating vector[size] of samples from that distribution
+lognormSampler <- function(original) {
+  require(fitdistrplus)
+  fit <- fitdist(degree(original) + 1, "lnorm")
+  function(size) {
+    rlnorm(size,
+           mean = fit$estimate["meanlog"],
+           sd = fit$estimate["sdlog"])
+  } # returns a function
+}
+```
+
+```{r}
+# return a graph with given size and edge distribution. InputGenerator when provided with distrSampler
+graphGenerator <- function(size, params) {
+  new_degs <-  params$distrSampler(size) %>% round
+  new_degs[new_degs > size] <- size # trim meaningless values
+  if(sum(new_degs) %% 2 != 0){ new_degs[1] <- new_degs[1] + 1} # undirected graph must have even sum of orders
+  g5 <- sample_degseq(out.deg = new_degs) %>%
+    as.directed(mode = "arbitrary") %>%  # generated undirected graph! Fix?
+    simplify(remove.loops = T)  # remove edges with from=to
+  g5
+}
+```
+
+```{r}
+sizes <- c(2, 4, 6, 8, 100)
+# inputGenerator signature: f(size, params) returns input; algArgs will be passed as params
+# algo signature: a(input, params) output will be ignored; inputArgs will be passed as params
+ runSizes <- function(algo, inputGenerator, sizes, timeLimit, algArgs = NULL, inputArgs = NULL) {
+  require(igraph)
+  startTime  <- system.time()
+  # definitions of output parameters:
+  edges <- numeric(length = length(sizes))
+  nodes <- numeric(length = length(sizes))
+  elapsed <- numeric(length = length(sizes))
+  
+  for(i in 1:lenght(sizes)){
+    g <- inputGenerator(sizes[i], inputArgs)
+    elapsed[i] <- system.time({
+      algo(g, algArgs)
+    })
+    nodes[i] <- gorder(g)
+    edges[i] <- gsize(g)
+    if(system.time() - startTime > timeLimit){
+      elapsed <- elapsed[1:i]
+      nodes <- nodes[1:i]
+      edges <- edges[1:i]
+      break
+    }
+  }
+  return(data.frame(edges, nodes, elapsed))
+  # add alg name, processors + architecture
+}
+```
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.

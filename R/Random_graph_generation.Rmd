@@ -9,7 +9,7 @@ First, let's import one of the POETS graphs:
 library(igraph)
 library(magrittr) # pipe operator
 setwd("~/Code/Warwick/BSP/R/")
-data <- read.table("./asp/Networks/n5.edges", sep=" ", skip=2)
+data <- read.table("./asp/Networks/nodes10000.edges", sep=" ", skip=2)
 n5 <- graph_from_data_frame(d = data, directed=T)
 rm(data) # remove name from workspace to reduce clutter
 ```
@@ -31,7 +31,8 @@ points(table(n5$out_deg), type = "p", col=3)
 ```
 Exponential distribution?
 ```{r}
-fitdist(n5$in_deg, "exp") %>% plot
+library(fitdistrplus)
+# fitdist(n5$in_deg, "exp") %>% plot
 ```
 The Q-Q plot shows our data is heavy-tailed. Another guesss is log-normal distribution:
 ```{r}
@@ -82,8 +83,9 @@ scaledRandomGraph <- function(original, new_v){
 }
 
 g1 <- scaledRandomGraph(n5, gsize(n5))
-plot(g1, layout = layout_in_circle)
+# plot(g1, layout = layout_in_circle)
 ```
+
 ```{r}
 plot(degree(g5, mode = "in"), degree(n5, mode = "out"), type = "p")
 cor.test(degree(g5, mode = "in"), degree(g5, mode = "out"))
