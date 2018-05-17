@@ -65,3 +65,19 @@ e <- rep(1, length(linx)) / sqrt(length(linx)) # constant vector with unit absol
 p <- cbind(e,poly(linx*5, 3))
 zapsmall(crossprod(p))
 ```
+
+Beware of peculiarities in naming when using `predict()`:
+```{r}
+x <- 1:100
+y <- x**2
+data <- data.frame(x, y) # this automatically creates column names "x" and "y"
+fit <- lm(y ~ poly(x, 2), data = data)
+```
+Now, to use this model on a predict dataset you need a df with exactly the same column names
+```{r}
+data.frame(x[1:10]) %>% colnames # oups, stupid name will fool the model
+newdata <- data.frame(x = x[1:10])
+colnames(newdata)
+predict(fit, newdata)
+```
+
