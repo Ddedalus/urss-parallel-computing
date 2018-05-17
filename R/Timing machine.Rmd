@@ -75,10 +75,10 @@ graphGenerator <- function(size, params) {
 ```
 
 ```{r}
-sizes <- seq(10000,10000,by=100)
+sizes <- seq(200, to = 5000, by = 200)
 sampler <- lognormSampler(n5)
-res <- runSizes(algoDistances, graphGenerator, sizes, 100, inputArgs = c(distrSampler = sampler), algArgs = c())
-saveRDS(res, file="from500to20000in5min.rds")
+res <- runSizes(algoDistances, graphGenerator, sizes, 500, inputArgs = c(distrSampler = sampler), algArgs = c())
+saveRDS(res, file="from200to5000.rds")
 ```
 
 ```{r}
@@ -103,9 +103,20 @@ The preview shows you a rendered HTML copy of the contents of the editor. Conseq
 ```{r}
 nlfit <- lm(elapsed ~ nlog, data = res)
 print(nlfit)
-r <- seq(2000, to = 10000, by = 100)
+r <- seq(200, to = 5000, by = 100)
 {predict(nlfit, data.frame("nlog" = r * log(r))) %>% plot(r, .)
   lines(res$nodes, res$elapsed)
 }
+```
+```{r}
+res$pol1 <- poly(res$nodes, 2)[, 1]
+res$pol2 <- poly(res$nodes, 2)[, 2]
+
+squarefit <- lm(elapsed ~ pol1 + pol2, data = res)
+r <- seq(200, to = 10000, by = 200)
+r <- res$nodes
+p <- predict(squarefit, data.frame("pol1" = poly(r, 2)[, 1], "pol2" = poly(r, 2)[, 2]))
+{plot(res$nodes, res$elapsed, col="red")
+  points(r, p, col="green")}
 ```
 
