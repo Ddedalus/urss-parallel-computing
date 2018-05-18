@@ -35,21 +35,21 @@ points(table(n5$out_deg), type = "p", col=3)
 Exponential distribution?
 ```{r}
 library(fitdistrplus)
-# fitdist(n5$in_deg, "exp") %>% plot
+fitdist(n5$in_deg, "exp") %>% plot
 ```
 The Q-Q plot shows our data is heavy-tailed. Another guesss is log-normal distribution:
 ```{r}
-in_lnorm_fit <- fitdist((n5$in_deg + 1)/n5$v, "lnorm")
+in_lnorm_fit <- fitdist(1000*n5$in_deg + 1.5, "lnorm")
 plot(in_lnorm_fit)
 ```
 Nearly perfect! What about `n5$out_degree`?
 ```{r}
-fit_lnorm_out <- fitdist(n5$out_deg + 1, "lnorm")
+fit_lnorm_out <- fitdist(n5$out_deg + 15, "lnorm")
 plot(fit_lnorm_out)
 ```
 Well, a tiny bit of tweaking the shift factor would make the quartiles match even better.
 
-Consider correlation between in and out degree:
+Is there any correlation between in and out degree:
 ```{r}
 plot(degree(n5, mode = "in"), degree(n5, mode = "out"), type = "p")
 cor.test(degree(n5, mode = "in"), degree(n5, mode = "out"))
