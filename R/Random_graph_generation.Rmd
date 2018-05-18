@@ -20,34 +20,29 @@ n5$in_deg <- degree(n5, mode = "in")  # in-degrees
 n5$out_deg <- degree(n5, mode = "out")
 n5$v <- gorder(n5)  # number of vertices
 n5$e <- gsize(n5)  # number of edges
-
-#experimental:
-n5$in_deg <- n5$in_deg/n5$v
 ```
 In degree ploted in red, out degree in green:
-
 ```{r}
 {
 plot(table(n5$in_deg), type = "p", col="red", ylab = "occurences", xlab = "degree")
 points(table(n5$out_deg), type = "p", col=3)
 }
 ```
-Exponential distribution?
+The Q-Q plot shows our data is heavy-tailed. Another guesss is log-normal distribution. As some shift is required to avoid log(0), we use distribution with additional degree of freedom:
 ```{r}
 library(fitdistrplus)
-fitdist(n5$in_deg, "exp") %>% plot
-```
-The Q-Q plot shows our data is heavy-tailed. Another guesss is log-normal distribution:
-```{r}
-in_lnorm_fit <- fitdist(1000*n5$in_deg + 1.5, "lnorm")
+library(EnvStats)
+
+in_lnorm_fit <- fitdist(n5$in_deg, "lnorm3", start = c(meanlog=1, sdlog=0.1, threshold=0))
 plot(in_lnorm_fit)
+in_lnorm_fit
 ```
 Nearly perfect! What about `n5$out_degree`?
 ```{r}
-fit_lnorm_out <- fitdist(n5$out_deg + 15, "lnorm")
+fit_lnorm_out <- fitdist(n5$out_deg, "lnorm3", start = c(meanlog=3, sdlog=0.1, threshold=-10))
 plot(fit_lnorm_out)
 ```
-Well, a tiny bit of tweaking the shift factor would make the quartiles match even better.
+Guessing start values for the recursive fitting algorithm used behind the scenes requires a bit of trial and error but the final fit looks really accurate.
 
 Is there any correlation between in and out degree:
 ```{r}
