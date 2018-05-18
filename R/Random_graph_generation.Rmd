@@ -9,7 +9,7 @@ First, let's import one of the POETS graphs:
 library(igraph)
 library(magrittr) # pipe operator
 setwd("~/Code/Warwick/BSP/R/")
-data <- read.table("./asp/Networks/nodes10000.edges", sep=" ", skip=2)
+data <- read.table("./asp/Networks/n5.edges", sep=" ", skip=2)
 n5 <- graph_from_data_frame(d = data, directed=T)
 rm(data) # remove name from workspace to reduce clutter
 ```
@@ -20,34 +20,39 @@ n5$in_deg <- degree(n5, mode = "in")  # in-degrees
 n5$out_deg <- degree(n5, mode = "out")
 n5$v <- gorder(n5)  # number of vertices
 n5$e <- gsize(n5)  # number of edges
-
-#experimental:
-n5$in_deg <- n5$in_deg/n5$v
 ```
 In degree ploted in red, out degree in green:
-
 ```{r}
 {
 plot(table(n5$in_deg), type = "p", col="red", ylab = "occurences", xlab = "degree")
 points(table(n5$out_deg), type = "p", col=3)
 }
 ```
-Exponential distribution?
+The Q-Q plot shows our data is heavy-tailed. Another guesss is log-normal distribution. As some shift is required to avoid log(0), we use distribution with additional degree of freedom:
 ```{r}
-library(fitdistrplus)
-fitdist(n5$in_deg, "exp") %>% plot
+lnorm3_autofit <- function(samples) {
+  require(fitdistrplus); require(EnvStats); require(stats)
+  init_vals <- fitdist(samples + 1, "lnorm")$estimate
+  lnorm_fit <- fitdist(samples + 1, "lnorm3", start = c(init_vals, threshold=0))
+  lnorm_fit$estimate["threshold"] <- lnorm_fit$estimate["threshold"] - 1
+  lnorm_fit
+}
 ```
-The Q-Q plot shows our data is heavy-tailed. Another guesss is log-normal distribution:
+
 ```{r}
-in_lnorm_fit <- fitdist(1000*n5$in_deg + 1.5, "lnorm")
-plot(in_lnorm_fit)
+plot(lnorm3_autofit(degree(n5)))
 ```
-Nearly perfect! What about `n5$out_degree`?
+Nearly perfect, tail is a bit fussy! What about `n5$out_degree`?
 ```{r}
-fit_lnorm_out <- fitdist(n5$out_deg + 15, "lnorm")
+fit_lnorm_out <- fitdist(n5$out_deg, "lnorm3", start = c(meanlog=0, sdlog=5, threshold=10))
 plot(fit_lnorm_out)
 ```
-Well, a tiny bit of tweaking the shift factor would make the quartiles match even better.
+Guessing start values for the recursive fitting algorithm used behind the scenes requires a bit of trial and error but the final fit looks really accurate.
+
+```{r}
+fit_lnorm_out <- fitdist(degree(n5), "lnorm3", start = c(meanlog=3, sdlog=0.1, threshold=-10))
+plot(fit_lnorm_out)
+```
 
 Is there any correlation between in and out degree:
 ```{r}
@@ -58,7 +63,7 @@ cor.test(degree(n5, mode = "in"), degree(n5, mode = "out"))
 ## Generate random graphs
 We have enough information to generate a random graph with similar characteristics:
 ```{r}
-fit <- fitdist(degree(n5) + 1, "lnorm")
+fit <- fitdist(degree(n5), "lnorm3", )
 new_degs <- rlnorm(n5$v, mean = fit$estimate["meanlog"],
                          sd = fit$estimate["sdlog"]) %>% round
 new_degs[new_degs > n5$v] <- n5$v # trim meaningless values
@@ -74,23 +79,30 @@ fitdist(degree(g5) + 1, "lnorm") %>% plot
 ```{r}
 scaledRandomGraph <- function(original, new_v){
   require(fitdistrplus)
-  fit <- fitdist(degree(original) + 1, "lnorm")
-    new_degs <- rlnorm(new_v,
+  require(EnvStats)
+  fit <- fitdist(degree(original), "lnorm3", start = c(meanlog=3, sdlog=0.1, threshold=-10))
+    new_degs <- rlnorm3(new_v,
                      mean = fit$estimate["meanlog"],
-                     sd = fit$estimate["sdlog"]) %>% round
+                     sd = fit$estimate["sdlog"], threshold = fit$estimate["threshold"]) %>% round
   new_degs[new_degs > new_v] <- new_v # trim meaningless values
   if(sum(new_degs) %% 2 != 0){ new_degs[1] <- new_degs[1] + 1} # undirected graph must have even sum of orders
   g5 <- sample_degseq(out.deg = new_degs) %>%
     as.directed(mode = "arbitrary") %>%  # generated undirected graph! Fix?
     simplify(remove.loops = T)  # remove edges with from=to
 }
-
-g1 <- scaledRandomGraph(n5, gsize(n5))
-# plot(g1, layout = layout_in_circle)
 ```
 
 ```{r}
-plot(degree(g5, mode = "in"), degree(n5, mode = "out"), type = "p")
-cor.test(degree(g5, mode = "in"), degree(g5, mode = "out"))
+g1 <- scaledRandomGraph(n5, gsize(n5))
+summary(g1)
 ```
+
+```{r}
+{
+plot(table(n5$in_deg), type = "p", col="red", ylab = "occurences", xlab = "degree")
+p(table(degree(g5)), type = "p", col=3)
+}
+# plot(g1, layout = layout_in_circle)
+```
+
 
