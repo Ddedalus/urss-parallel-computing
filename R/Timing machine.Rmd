@@ -97,7 +97,7 @@ summary(squarefit)
 Note that in order to protect the model from correlation between powers of `nodes`, orthogonal polynomials are used instead. The `poly` function returns uncorrelated and normalised columns corresponding to consecutive powers of it's first argument.
 
 As the model seems to fit our observations, we may try to extrapolate execution time of the same algorithm with a bigger input size:
-```{r}
+```{r results='hide'}
 bigsizes <- c(6000, 8000, 10000, 12000)
 bigres <- runSizes(algoDistances, graphGenerator, bigsizes, 150, inputArgs = c(distrSampler = sampler), algArgs = c())
 ```
