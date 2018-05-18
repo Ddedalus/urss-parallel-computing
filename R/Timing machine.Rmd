@@ -75,10 +75,10 @@ graphGenerator <- function(size, params) {
 }
 ```
 
-```{r}
+```{r results='hide'}
 sizes <- seq(200, to = 5000, by = 200)
 sampler <- lognormSampler(n5)
-res <- runSizes(algoDistances, graphGenerator, sizes, 50, inputArgs = c(distrSampler = sampler), algArgs = c())
+res2 <- runSizes(algoDistances, graphGenerator, sizes, 100, inputArgs = c(distrSampler = sampler), algArgs = c())
 saveRDS(res, file="from200to5000.rds")
 ```
 Having gathered enough datapoints one can fit a linear model and asses visually how it matches the data:
@@ -104,20 +104,9 @@ bigres <- runSizes(algoDistances, graphGenerator, bigsizes, 150, inputArgs = c(d
 
 ```{r}
 total <- rbind(res, bigres)
-pred <- predict(squarefit, newdata = total)
-{ plot(total$nodes, total$elapsed, col="red")
-  points(total$nodes, pred, col="green")}
+total$pred <- predict(squarefit, newdata = total)
+
+matplot(total$nodes, total[c("pred", "elapsed")], col = c("green", "red"), pch = c(1, 19))
 ```
 It comes out the prediction is a bit undershot but catches nonlinear behaviour of the data.
-```{r}
-res$pol1 <- poly(res$nodes, 2)[, 1]
-res$pol2 <- poly(res$nodes, 2)[, 2]
-
-squarefit <- lm(elapsed ~ pol1 + pol2, data = res)
-r <- seq(200, to = 10000, by = 200)
-r <- data.frame(nodes = res$nodes)
-p <- predict(squarefit, ]))
-{plot(res$nodes, res$elapsed, col="red")
-  points(r, p, col="green")}
-```
 
