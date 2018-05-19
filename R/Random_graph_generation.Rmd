@@ -8,26 +8,25 @@ First, let's import one of the POETS graphs:
 ```{r}
 library(igraph)
 library(magrittr) # pipe operator
+# library(devtools)
+# document(pkg = "./bspFunctions/")
+library(bspFunctions) # my library
 # library(package)
 setwd("~/Code/Warwick/BSP/R/")
-data <- read.table("./asp/Networks/nodes8000.edges", sep=" ", skip=2)
+data <- read.table("./asp/Networks/nodes4000.edges", sep=" ", skip=2)
 n5 <- graph_from_data_frame(d = data, directed=T)
 rm(data) # remove name from workspace to reduce clutter
 ```
 
 And calculate some descriptive statistics:
 ```{r}
-n5$in_deg <- degree(n5, mode = "in")  # in-degrees
-n5$out_deg <- degree(n5, mode = "out")
-n5$v <- gorder(n5)  # number of vertices
-n5$e <- gsize(n5)  # number of edges
+gorder(n5)  # number of vertices
+gsize(n5)  # number of edges
 ```
-In degree ploted in red, out degree in green:
+In degree plotted in red, out degree in green:
 ```{r}
-{
-plot(table(n5$in_deg), type = "p", col="red", ylab = "occurences", xlab = "degree")
-points(table(n5$out_deg), type = "p", col=3)
-}
+{  plot(table(degree(n5, mode = "in")), type = "p", col="red", ylab = "occurences", xlab = "degree")
+   points(table(degree(n5, mode = "out")), type = "p", col=3)}
 ```
 Is there any correlation between in and out degree?
 ```{r}
@@ -35,64 +34,12 @@ cor.test(degree(n5, mode = "in"), degree(n5, mode = "out"))$estimate
 ```
 Examining these plots I conjectured distribution of degrees is log-normal shifted by a constant factor (0 cannot be obtained otherwise). Fitting a suitable `lnorm3` gives:
 ```{r}
-library(bspFunctions) # my library
 lnorm_fit <- bspFunctions::lnorm3_autofit(degree(n5, mode = "all"))
 plot(lnorm_fit)
 ```
-It's now possible to generate a new random graph using this estimate as degree distribution: 
+The fit looks really accurate. It's now possible to generate a new random graph using this estimate as degree distribution: 
 ```{r}
-g5 <- graphFromDist(gorder(n5), lnorm_fit)
+g5 <- graphFromDist(gorder(n5) %>% round, lnorm_fit)
 qqplot(degree(g5, mode="all"), degree(n5, mode="all"))
 ```
-Nearly perfect, tail is a bit fussy.
-```{r}
-distrfit <- lnorm_fit
-size <- gorder(n5)
-graphFromDist <- function(size, distrfit) {
-  rdist <- paste0("r", distrfit$distname) %>% get # name of the sampling function
-  new_degs <-  do.call(rdist, args = as.list(c(size, distrfit$estimate))) %>% round # sample degree of each node
-  new_degs[new_degs > size] <- size # trim values exceeding order
-  if(sum(new_degs) %% 2 != 0){ new_degs[1] <- new_degs[1] + 1} # undirected graph must have even sum of orders
-  g5 <- sample_degseq(out.deg = new_degs) %>%
-    as.directed(mode = "arbitrary") %>%  # generated undirected graph! Fix?
-    simplify(remove.loops = T)  # remove edges with from=to
-  g5
-}
-qqplot(do.call(rdist, args = as.list(c(size, distrfit$estimate))) %>% round, degree(n5))
-do.call(rdist, args = as.list(c(size, distrfit$estimate)))
-```
-
-
-```{r}
-scaledRandomGraph <- function(original, new_v){
-  require(fitdistrplus)
-  require(EnvStats)
-  fit <- fitdist(degree(original), "lnorm3", start = c(meanlog=4, sdlog=0.1, threshold=-30))
-    new_degs <- rlnorm3(new_v,
-                     mean = fit$estimate["meanlog"],
-                     sd = fit$estimate["sdlog"], threshold = fit$estimate["threshold"]) %>% round
-  new_degs[new_degs > new_v] <- new_v # trim meaningless values
-  if(sum(new_degs) %% 2 != 0){ new_degs[1] <- new_degs[1] + 1} # undirected graph must have even sum of orders
-  g5 <- sample_degseq(out.deg = new_degs) %>%
-    as.directed(mode = "arbitrary") %>%  # generated undirected graph! Fix?
-    simplify(remove.loops = T)  # remove edges with from=to
-}
-```
-
-```{r}
-g1 <- scaledRandomGraph(n5, gorder(n5))
-summary(g1)
-summary(n5)
-qqplot(degree(g1, mode="all"), degree(n5, mode="all"))
-
-```
-
-```{r}
-{
-plot(table(n5$in_deg), type = "p", col="red", ylab = "occurences", xlab = "degree")
-p(table(degree(g5)), type = "p", col=3)
-}
-# plot(g1, layout = layout_in_circle)
-```
-
-
+Nearly perfect, just the tail is a bit fussy.
