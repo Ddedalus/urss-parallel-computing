@@ -10,7 +10,7 @@ library(igraph)
 library(magrittr) # pipe operator
 # library(package)
 setwd("~/Code/Warwick/BSP/R/")
-data <- read.table("./asp/Networks/n5.edges", sep=" ", skip=2)
+data <- read.table("./asp/Networks/nodes8000.edges", sep=" ", skip=2)
 n5 <- graph_from_data_frame(d = data, directed=T)
 rm(data) # remove name from workspace to reduce clutter
 ```
@@ -29,55 +29,45 @@ plot(table(n5$in_deg), type = "p", col="red", ylab = "occurences", xlab = "degre
 points(table(n5$out_deg), type = "p", col=3)
 }
 ```
-The Q-Q plot shows our data is heavy-tailed. Another guesss is log-normal distribution. As some shift is required to avoid log(0), we use distribution with additional degree of freedom:
+Is there any correlation between in and out degree?
 ```{r}
-library(bspFunctions)
-lnorm_fit <- lnorm3_autofit(degree(n5))
-lnorm_fit$distname
+cor.test(degree(n5, mode = "in"), degree(n5, mode = "out"))$estimate
+```
+Examining these plots I conjectured distribution of degrees is log-normal shifted by a constant factor (0 cannot be obtained otherwise). Fitting a suitable `lnorm3` gives:
+```{r}
+library(bspFunctions) # my library
+lnorm_fit <- bspFunctions::lnorm3_autofit(degree(n5, mode = "all"))
+plot(lnorm_fit)
+```
+It's now possible to generate a new random graph using this estimate as degree distribution: 
+```{r}
+g5 <- graphFromDist(gorder(n5), lnorm_fit)
+qqplot(degree(g5, mode="all"), degree(n5, mode="all"))
+```
+Nearly perfect, tail is a bit fussy.
+```{r}
+distrfit <- lnorm_fit
+size <- gorder(n5)
+graphFromDist <- function(size, distrfit) {
+  rdist <- paste0("r", distrfit$distname) %>% get # name of the sampling function
+  new_degs <-  do.call(rdist, args = as.list(c(size, distrfit$estimate))) %>% round # sample degree of each node
+  new_degs[new_degs > size] <- size # trim values exceeding order
+  if(sum(new_degs) %% 2 != 0){ new_degs[1] <- new_degs[1] + 1} # undirected graph must have even sum of orders
+  g5 <- sample_degseq(out.deg = new_degs) %>%
+    as.directed(mode = "arbitrary") %>%  # generated undirected graph! Fix?
+    simplify(remove.loops = T)  # remove edges with from=to
+  g5
+}
+qqplot(do.call(rdist, args = as.list(c(size, distrfit$estimate))) %>% round, degree(n5))
+do.call(rdist, args = as.list(c(size, distrfit$estimate)))
 ```
 
-```{r}
-plot(lnorm3_autofit(degree(n5)))
-```
-Nearly perfect, tail is a bit fussy! What about `n5$out_degree`?
-```{r}
-fit_lnorm_out <- fitdist(n5$out_deg, "lnorm3", start = c(meanlog=0, sdlog=5, threshold=10))
-plot(fit_lnorm_out)
-```
-Guessing start values for the recursive fitting algorithm used behind the scenes requires a bit of trial and error but the final fit looks really accurate.
-
-```{r}
-fit_lnorm_out <- fitdist(degree(n5), "lnorm3", start = c(meanlog=3, sdlog=0.1, threshold=-10))
-plot(fit_lnorm_out)
-```
-
-Is there any correlation between in and out degree:
-```{r}
-plot(degree(n5, mode = "in"), degree(n5, mode = "out"), type = "p")
-cor.test(degree(n5, mode = "in"), degree(n5, mode = "out"))
-```
-
-## Generate random graphs
-We have enough information to generate a random graph with similar characteristics:
-```{r}
-fit <- fitdist(degree(n5), "lnorm3", )
-new_degs <- rlnorm(n5$v, mean = fit$estimate["meanlog"],
-                         sd = fit$estimate["sdlog"]) %>% round
-new_degs[new_degs > n5$v] <- n5$v # trim meaningless values
-if(sum(new_degs) %% 2 != 0){ new_degs[1] <- new_degs[1] + 1}
-g5 <- sample_degseq(out.deg = new_degs) %>% as.directed(mode = "arbitrary") # generated undirected graph! Fix?
-```
-
-The new distribution is comparable to the original one:
-```{r}
-fitdist(degree(g5) + 1, "lnorm") %>% plot
-```
 
 ```{r}
 scaledRandomGraph <- function(original, new_v){
   require(fitdistrplus)
   require(EnvStats)
-  fit <- fitdist(degree(original), "lnorm3", start = c(meanlog=3, sdlog=0.1, threshold=-10))
+  fit <- fitdist(degree(original), "lnorm3", start = c(meanlog=4, sdlog=0.1, threshold=-30))
     new_degs <- rlnorm3(new_v,
                      mean = fit$estimate["meanlog"],
                      sd = fit$estimate["sdlog"], threshold = fit$estimate["threshold"]) %>% round
@@ -90,8 +80,11 @@ scaledRandomGraph <- function(original, new_v){
 ```
 
 ```{r}
-g1 <- scaledRandomGraph(n5, gsize(n5))
+g1 <- scaledRandomGraph(n5, gorder(n5))
 summary(g1)
+summary(n5)
+qqplot(degree(g1, mode="all"), degree(n5, mode="all"))
+
 ```
 
 ```{r}
