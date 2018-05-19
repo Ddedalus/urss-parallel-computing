@@ -4,113 +4,62 @@ output: html_notebook
 ---
 
 ## Input generator
-```{r}
+```{r setup, include=FALSE, res2ults='hide'}
 library(igraph)
 library(magrittr)
-# fits lognormal distribution to a graph and returns function generating vector[size] of samples from that distribution
-lognormSampler <- function(original) {
-  require(fitdistrplus)
-  fit <- fitdist(degree(original) + 1, "lnorm")
-  function(size) {
-    rlnorm(size,
-           mean = fit$estimate["meanlog"],
-           sd = fit$estimate["sdlog"])
-  } # returns a function
-}
+library(devtools)
+setwd("~/Code/Warwick/BSP/R/")
+document(pkg = "~/Code/Warwick/BSP/R/bspFunctions/") # compile the newest version of my package
+library(bspFunctions)
 ```
-
+Use a POETS graph to obtain a realistic distribution function:
 ```{r}
-algoDistances <- function(g, params) {
+sourceG <- readPOETSGraph("./asp/Networks/nodes8000.edges")
+dfit <- lnorm3_autofit(degree(sourceG))
+```
+Define an algorithm to be tested, for now just the default distance estimation from `igraph`:
+```{r}
+algoDistances <- function(g, params) {  # params will be passed by Timing Machine, ignored for now
   require(igraph)
   distances(g)
 }
 ```
 
-
-```{r}
-
-```
-
-
-```{r}
-# return a graph with given size and edge distribution. InputGenerator when provided with distrSampler
-graphGenerator <- function(size, params) {
-  require(igraph)
-  new_degs <-  params$distrSampler(size) %>% round
-  new_degs[new_degs > size] <- size # trim meaningless values
-  if(sum(new_degs) %% 2 != 0){ new_degs[1] <- new_degs[1] + 1} # undirected graph must have even sum of orders
-  g5 <- sample_degseq(out.deg = new_degs) %>%
-    as.directed(mode = "arbitrary") %>%  # generated undirected graph! Fix?
-    simplify(remove.loops = T)  # remove edges with from=to
-  g5
-}
-```
-
 ## Run series of sizes
-```{r}
-# algo signature: a(input, params) output will be ignored; inputArgs will be passed as params
-# inputGenerator signature: f(size, params) returns input; algArgs will be passed as params
- runSizes <- function(algo, inputGenerator, sizes, timeLimit, algArgs = c(), inputArgs = NULL) {
-  # pbI <- txtProgressBar(min = , max = length(sizes), style = 3)
-  pbTime <- txtProgressBar(min=0, max = timeLimit, style=3)
-  startTime  <- Sys.time()
-  edges <- numeric(length = length(sizes)) # breaks generality of this function. Fix it later
-  nodes <- numeric(length = length(sizes))
-  elapsed <- numeric(length = length(sizes))
-  runtime <- 0
-  for(i in 1:length(sizes)){
-    # setTxtProgressBar(pbI, i)
-    setTxtProgressBar(pbTime, runtime)
-    g <- inputGenerator(sizes[i], inputArgs)
-    elapsed[i] <- system.time(
-      algo(g, algArgs)
-    )["elapsed"]
-    nodes[i] <- gorder(g)  # replace with a generic function call
-    edges[i] <- gsize(g)
-    runtime <- difftime(Sys.time(), startTime, units = "secs") 
-    if(runtime > timeLimit){
-      elapsed <- elapsed[1:i]
-      nodes <- nodes[1:i]  # this renders difficult in implementation as generic
-      edges <- edges[1:i]
-      message("\nTimed out at i=", i)
-      break
-    }
-  }
-  return(data.frame(edges, nodes, elapsed))
-  # add alg name, processors + architecture later
-}
-```
-
+Specyfying a range of input sizes we can obtain runtimes of the algorithm with a single function call:
 ```{r results='hide'}
 sizes <- seq(200, to = 5000, by = 200)
-sampler <- lognormSampler(n5)
-# res2 <- runSizes(algoDistances, graphGenerator, sizes, 100, inputArgs = c(distrSampler = sampler), algArgs = c())
-# saveRDS(res2, file="from200to5000.rds")
-res2 <- readRDS(file="from200to5000.rds")
+res <- runOnSizes(algoDistances, graphFromDist,
+sizes, 300,
+inputArgs = dfit, algArgs = c())
+saveRDS(res, file="from200to5000.rds")
+# res2 <- readRDS(file="from200to5000.rds")
+plot(res$nodes, res$elapsed)
 ```
 Having gathered enough datapoints one can fit a linear model and asses visually how it matches the data:
-```{r}
-plot(res$nodes, res$elapsed)
-squarefit <- lm(elapsed ~ poly(nodes, 2), data = res)
+```{r results="hide"}
+squarefit <- lm(elapsed ~ poly(nodes, 2), data = res2)
 # plot(squarefit)
-{ plot(res$nodes, res$elapsed, col="red")
-  points(res$nodes, predict(squarefit, res), col="green")}
+{ plot(res2$nodes, res2$elapsed, col="red")
+  points(res2$nodes, predict(squarefit, res2), col="green")}
 ```
 
-And also inspect parameters of the model and measures of uncertainity:
+And also inspect parameters of the model and various measures of it's uncertainity:
 ```{r}
 summary(squarefit)
 ```
-Note that in order to protect the model from correlation between powers of `nodes`, orthogonal polynomials are used instead. The `poly` function returns uncorrelated and normalised columns corresponding to consecutive powers of it's first argument.
+Note that in order to protect the model from correlation between powers of `nodes`, orthogonal polynomials are used. The `poly` function returns uncorrelated and normalised columns corressponding to consecutive powers of it's first argument.
 
 As the model seems to fit our observations, we may try to extrapolate execution time of the same algorithm with a bigger input size:
-```{r results='hide'}
+```{r message=FALSE, results='hide'}
 bigsizes <- c(6000, 8000, 10000, 12000)
-bigres <- runSizes(algoDistances, graphGenerator, bigsizes, 150, inputArgs = c(distrSampler = sampler), algArgs = c())
+bigres2 <- runSizes(algoDistances, graphFromDist,
+                    bigsizes, 150,
+                    inputArgs = dfit, algArgs = c())
 ```
 
 ```{r}
-total <- rbind(res, bigres)
+total <- rbind(res2, bigres2)
 total$pred <- predict(squarefit, newdata = total)
 
 matplot(total$nodes, total[c("pred", "elapsed")], col = c("green", "red"), pch = c(1, 19))
