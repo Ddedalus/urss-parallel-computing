@@ -8,86 +8,38 @@ First, let's import one of the POETS graphs:
 ```{r}
 library(igraph)
 library(magrittr) # pipe operator
+# library(devtools)
+# document(pkg = "./bspFunctions/")
+library(bspFunctions) # my library
+# library(package)
 setwd("~/Code/Warwick/BSP/R/")
-data <- read.table("./asp/Networks/nodes10000.edges", sep=" ", skip=2)
+data <- read.table("./asp/Networks/nodes4000.edges", sep=" ", skip=2)
 n5 <- graph_from_data_frame(d = data, directed=T)
 rm(data) # remove name from workspace to reduce clutter
 ```
 
 And calculate some descriptive statistics:
 ```{r}
-n5$in_deg <- degree(n5, mode = "in")  # in-degrees
-    n5$out_deg <- degree(n5, mode = "out")
-n5$v <- gorder(n5)  # number of vertices
-n5$e <- gsize(n5)  # number of edges
+gorder(n5)  # number of vertices
+gsize(n5)  # number of edges
 ```
-In degree ploted in red, out degree in green:
-
+In degree plotted in red, out degree in green:
 ```{r}
-{
-plot(table(n5$in_deg), type = "p", col=2, ylab = "occurences", xlab = "degree")
-points(table(n5$out_deg), type = "p", col=3)
-}
+{  plot(table(degree(n5, mode = "in")), type = "p", col="red", ylab = "occurences", xlab = "degree")
+   points(table(degree(n5, mode = "out")), type = "p", col=3)}
 ```
-Exponential distribution?
+Is there any correlation between in and out degree?
 ```{r}
-library(fitdistrplus)
-# fitdist(n5$in_deg, "exp") %>% plot
+cor.test(degree(n5, mode = "in"), degree(n5, mode = "out"))$estimate
 ```
-The Q-Q plot shows our data is heavy-tailed. Another guesss is log-normal distribution:
+Examining these plots I conjectured distribution of degrees is log-normal shifted by a constant factor (0 cannot be obtained otherwise). Fitting a suitable `lnorm3` gives:
 ```{r}
-in_lnorm_fit <- fitdist(n5$in_deg + 1, "lnorm")
-plot(in_lnorm_fit)
+lnorm_fit <- bspFunctions::lnorm3_autofit(degree(n5, mode = "all"))
+plot(lnorm_fit)
 ```
-Nearly perfect! What about `n5$out_degree`?
+The fit looks really accurate. It's now possible to generate a new random graph using this estimate as degree distribution: 
 ```{r}
-fit_lnorm_out <- fitdist(n5$out_deg + 1, "lnorm")
-plot(fit_lnorm_out)
+g5 <- graphFromDist(gorder(n5) %>% round, lnorm_fit)
+qqplot(degree(g5, mode="all"), degree(n5, mode="all"))
 ```
-Well, a tiny bit of tweaking the shift factor would make the quartiles match even better.
-
-Consider correlation between in and out degree:
-```{r}
-plot(degree(n5, mode = "in"), degree(n5, mode = "out"), type = "p")
-cor.test(degree(n5, mode = "in"), degree(n5, mode = "out"))
-```
-
-## Generate random graphs
-We have enough information to generate a random graph with similar characteristics:
-```{r}
-fit <- fitdist(degree(n5) + 1, "lnorm")
-new_degs <- rlnorm(n5$v, mean = fit$estimate["meanlog"],
-                         sd = fit$estimate["sdlog"]) %>% round
-new_degs[new_degs > n5$v] <- n5$v # trim meaningless values
-if(sum(new_degs) %% 2 != 0){ new_degs[1] <- new_degs[1] + 1}
-g5 <- sample_degseq(out.deg = new_degs) %>% as.directed(mode = "arbitrary") # generated undirected graph! Fix?
-```
-
-The new distribution is comparable to the original one:
-```{r}
-fitdist(degree(g5) + 1, "lnorm") %>% plot
-```
-
-```{r}
-scaledRandomGraph <- function(original, new_v){
-  require(fitdistrplus)
-  fit <- fitdist(degree(original) + 1, "lnorm")
-    new_degs <- rlnorm(new_v,
-                     mean = fit$estimate["meanlog"],
-                     sd = fit$estimate["sdlog"]) %>% round
-  new_degs[new_degs > new_v] <- new_v # trim meaningless values
-  if(sum(new_degs) %% 2 != 0){ new_degs[1] <- new_degs[1] + 1} # undirected graph must have even sum of orders
-  g5 <- sample_degseq(out.deg = new_degs) %>%
-    as.directed(mode = "arbitrary") %>%  # generated undirected graph! Fix?
-    simplify(remove.loops = T)  # remove edges with from=to
-}
-
-g1 <- scaledRandomGraph(n5, gsize(n5))
-# plot(g1, layout = layout_in_circle)
-```
-
-```{r}
-plot(degree(g5, mode = "in"), degree(n5, mode = "out"), type = "p")
-cor.test(degree(g5, mode = "in"), degree(g5, mode = "out"))
-```
-
+Nearly perfect, just the tail is a bit fussy.

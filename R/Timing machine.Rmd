@@ -26,6 +26,12 @@ algoDistances <- function(g, params) {
 }
 ```
 
+
+```{r}
+
+```
+
+
 ```{r}
 # return a graph with given size and edge distribution. InputGenerator when provided with distrSampler
 graphGenerator <- function(size, params) {
@@ -78,8 +84,9 @@ graphGenerator <- function(size, params) {
 ```{r results='hide'}
 sizes <- seq(200, to = 5000, by = 200)
 sampler <- lognormSampler(n5)
-res2 <- runSizes(algoDistances, graphGenerator, sizes, 100, inputArgs = c(distrSampler = sampler), algArgs = c())
-saveRDS(res, file="from200to5000.rds")
+# res2 <- runSizes(algoDistances, graphGenerator, sizes, 100, inputArgs = c(distrSampler = sampler), algArgs = c())
+# saveRDS(res2, file="from200to5000.rds")
+res2 <- readRDS(file="from200to5000.rds")
 ```
 Having gathered enough datapoints one can fit a linear model and asses visually how it matches the data:
 ```{r}
