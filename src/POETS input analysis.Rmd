@@ -1,5 +1,5 @@
 ---
-title: "Analysis of POETS graph"
+title: "Analysis of the POETS graphs"
 output: html_notebook
 ---
 
