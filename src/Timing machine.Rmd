@@ -8,13 +8,13 @@ output: html_notebook
 library(igraph)
 library(magrittr)
 library(devtools)
-setwd("~/Code/Warwick/BSP/R/")
-document(pkg = "~/Code/Warwick/BSP/R/bspFunctions/") # compile the newest version of my package
-library(bspFunctions)
+document(pkg = "./bspLib/") # compile the newest version of my package
+library(bspLib)
 ```
 Use a POETS graph to obtain a realistic distribution function:
 ```{r}
-sourceG <- readPOETSGraph("./asp/Networks/nodes8000.edges")
+getwd()
+sourceG <- readPOETSGraph("./external/asp/Networks/nodes8000.edges")
 dfit <- lnorm3_autofit(degree(sourceG))
 ```
 Define an algorithm to be tested, for now just the default distance estimation from `igraph`:
@@ -29,11 +29,15 @@ algoDistances <- function(g, params) {  # params will be passed by Timing Machin
 Specyfying a range of input sizes we can obtain runtimes of the algorithm with a single function call:
 ```{r results='hide'}
 sizes <- seq(200, to = 5000, by = 200)
-res <- runOnSizes(algoDistances, graphFromDist,
-sizes, 300,
-inputArgs = dfit, algArgs = c())
-saveRDS(res, file="from200to5000.rds")
-# res2 <- readRDS(file="from200to5000.rds")
+
+if(!file.exists("./data/from200to5000.rds")){      # to be automated, use precomputed values if available
+  res <- runOnSizes(algoDistances, graphFromDist,
+                  sizes, 300,
+                  inputArgs = dfit, algArgs = c())
+  saveRDS(res, file="./data/from200to5000.rds")
+} else{
+  res2 <- readRDS(file="./data/from200to5000.rds")
+}
 plot(res$nodes, res$elapsed)
 ```
 Having gathered enough datapoints one can fit a linear model and asses visually how it matches the data:
@@ -53,9 +57,16 @@ Note that in order to protect the model from correlation between powers of `node
 As the model seems to fit our observations, we may try to extrapolate execution time of the same algorithm with a bigger input size:
 ```{r message=FALSE, results='hide'}
 bigsizes <- c(6000, 8000, 10000, 12000)
-bigres2 <- runSizes(algoDistances, graphFromDist,
+if(!file.exists("./data/bigres2.rds")){      # to be automated
+  bigres2 <- runOnSizes(algoDistances, graphFromDist,
                     bigsizes, 150,
                     inputArgs = dfit, algArgs = c())
+  saveRDS(bigres2, file = "./data/bigres2.rds")
+} else{
+  readRDS("./data/bigres2.rds")
+}
+
+
 ```
 
 ```{r}

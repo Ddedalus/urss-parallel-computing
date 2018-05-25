@@ -5,15 +5,14 @@ output: html_notebook
 
 ### Analysing existing dataset
 First, let's import one of the POETS graphs:
-```{r}
+```{r echo=TRUE, message=FALSE, warning=FALSE}
 library(igraph)
 library(magrittr) # pipe operator
-# library(devtools)
-# document(pkg = "./bspFunctions/")
-library(bspFunctions) # my library
-# library(package)
-setwd("~/Code/Warwick/BSP/R/")
-data <- read.table("./asp/Networks/nodes4000.edges", sep=" ", skip=2)
+library(devtools)
+document(pkg = "./src/bspLib/")
+library(bspLib) # my library
+
+data <- read.table(file = "external/asp/Networks/n5.edges", sep=" ", skip=2)
 n5 <- graph_from_data_frame(d = data, directed=T)
 rm(data) # remove name from workspace to reduce clutter
 ```
@@ -34,7 +33,7 @@ cor.test(degree(n5, mode = "in"), degree(n5, mode = "out"))$estimate
 ```
 Examining these plots I conjectured distribution of degrees is log-normal shifted by a constant factor (0 cannot be obtained otherwise). Fitting a suitable `lnorm3` gives:
 ```{r}
-lnorm_fit <- bspFunctions::lnorm3_autofit(degree(n5, mode = "all"))
+lnorm_fit <- bspLib::lnorm3_autofit(degree(n5, mode = "all"))
 plot(lnorm_fit)
 ```
 The fit looks really accurate. It's now possible to generate a new random graph using this estimate as degree distribution: 

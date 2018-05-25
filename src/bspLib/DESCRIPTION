@@ -1,4 +1,4 @@
-Package: bspFunctions
+Package: bspLib
 Title: Gathers functions used across the BSP project
 Version: 0.0.0.9000
 Author: person("Hubert", "Beres", role="aut", email = "h.beres@warwick.ac.uk")
