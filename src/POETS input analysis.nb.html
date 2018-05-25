@@ -178,69 +178,49 @@ $(document).ready(function () {
 <p>First, let’s import one of the POETS graphs:</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubGlicmFyeShpZ3JhcGgpXG5saWJyYXJ5KG1hZ3JpdHRyKSAjIHBpcGUgb3BlcmF0b3JcbiMgbGlicmFyeShkZXZ0b29scylcbiMgZG9jdW1lbnQocGtnID0gXCIuL2JzcEZ1bmN0aW9ucy9cIilcbmxpYnJhcnkoYnNwRnVuY3Rpb25zKSAjIG15IGxpYnJhcnlcbiMgbGlicmFyeShwYWNrYWdlKVxuc2V0d2QoXCJ+L0NvZGUvV2Fyd2ljay9CU1AvUi9cIilcbmRhdGEgPC0gcmVhZC50YWJsZShcIi4vYXNwL05ldHdvcmtzL25vZGVzNDAwMC5lZGdlc1wiLCBzZXA9XCIgXCIsIHNraXA9Milcbm41IDwtIGdyYXBoX2Zyb21fZGF0YV9mcmFtZShkID0gZGF0YSwgZGlyZWN0ZWQ9VClcbnJtKGRhdGEpICMgcmVtb3ZlIG5hbWUgZnJvbSB3b3Jrc3BhY2UgdG8gcmVkdWNlIGNsdXR0ZXJcbmBgYCJ9 -->
-<pre class="r"><code>library(igraph)
-library(magrittr) # pipe operator
-# library(devtools)
-# document(pkg = &quot;./bspFunctions/&quot;)
-library(bspFunctions) # my library
-# library(package)
-setwd(&quot;~/Code/Warwick/BSP/R/&quot;)
-data &lt;- read.table(&quot;./asp/Networks/nodes4000.edges&quot;, sep=&quot; &quot;, skip=2)
-n5 &lt;- graph_from_data_frame(d = data, directed=T)
-rm(data) # remove name from workspace to reduce clutter</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZ2V0d2QoKVxuXG5gYGAifQ== -->
+<pre class="r"><code>getwd()
+</code></pre>
 <!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiWzFdIFwiL2hvbWUvaHViZXJ0L0NvZGUvV2Fyd2ljay9CU1BcIlxuIn0= -->
+<pre><code>[1] &quot;/home/hubert/Code/Warwick/BSP&quot;</code></pre>
+<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>And calculate some descriptive statistics:</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZ29yZGVyKG41KSAgIyBudW1iZXIgb2YgdmVydGljZXNcbmdzaXplKG41KSAgIyBudW1iZXIgb2YgZWRnZXNcbmBgYCJ9 -->
-<pre class="r"><code>gorder(n5)  # number of vertices
-gsize(n5)  # number of edges</code></pre>
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuYGBgclxuZ29yZGVyKG41KSAgIyBudW1iZXIgb2YgdmVydGljZXNcbmdzaXplKG41KSAgIyBudW1iZXIgb2YgZWRnZXNcbmBgYFxuYGBgIn0= -->
+<p><code>r</code>r gorder(n5) # number of vertices gsize(n5) # number of edges</p>
+<pre><code></code></pre>
 <!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>In degree plotted in red, out degree in green:</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxueyAgcGxvdCh0YWJsZShkZWdyZWUobjUsIG1vZGUgPSBcImluXCIpKSwgdHlwZSA9IFwicFwiLCBjb2w9XCJyZWRcIiwgeWxhYiA9IFwib2NjdXJlbmNlc1wiLCB4bGFiID0gXCJkZWdyZWVcIilcbiAgIHBvaW50cyh0YWJsZShkZWdyZWUobjUsIG1vZGUgPSBcIm91dFwiKSksIHR5cGUgPSBcInBcIiwgY29sPTMpfVxuYGBgIn0= -->
-<pre class="r"><code>{  plot(table(degree(n5, mode = &quot;in&quot;)), type = &quot;p&quot;, col=&quot;red&quot;, ylab = &quot;occurences&quot;, xlab = &quot;degree&quot;)
-   points(table(degree(n5, mode = &quot;out&quot;)), type = &quot;p&quot;, col=3)}</code></pre>
-<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>Is there any correlation between in and out degree?</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuY29yLnRlc3QoZGVncmVlKG41LCBtb2RlID0gXCJpblwiKSwgZGVncmVlKG41LCBtb2RlID0gXCJvdXRcIikpJGVzdGltYXRlXG5gYGAifQ== -->
-<pre class="r"><code>cor.test(degree(n5, mode = &quot;in&quot;), degree(n5, mode = &quot;out&quot;))$estimate</code></pre>
-<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>Examining these plots I conjectured distribution of degrees is log-normal shifted by a constant factor (0 cannot be obtained otherwise). Fitting a suitable <code>lnorm3</code> gives:</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubG5vcm1fZml0IDwtIGJzcEZ1bmN0aW9uczo6bG5vcm0zX2F1dG9maXQoZGVncmVlKG41LCBtb2RlID0gXCJhbGxcIikpXG5wbG90KGxub3JtX2ZpdClcbmBgYCJ9 -->
-<pre class="r"><code>lnorm_fit &lt;- bspFunctions::lnorm3_autofit(degree(n5, mode = &quot;all&quot;))
-plot(lnorm_fit)</code></pre>
-<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>The fit looks really accurate. It’s now possible to generate a new random graph using this estimate as degree distribution:</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZzUgPC0gZ3JhcGhGcm9tRGlzdChnb3JkZXIobjUpICU+JSByb3VuZCwgbG5vcm1fZml0KVxucXFwbG90KGRlZ3JlZShnNSwgbW9kZT1cImFsbFwiKSwgZGVncmVlKG41LCBtb2RlPVwiYWxsXCIpKVxuYGBgIn0= -->
-<pre class="r"><code>g5 &lt;- graphFromDist(gorder(n5) %&gt;% round, lnorm_fit)
-qqplot(degree(g5, mode=&quot;all&quot;), degree(n5, mode=&quot;all&quot;))</code></pre>
-<!-- rnb-source-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <p>Nearly perfect, just the tail is a bit fussy.</p>
 <!-- rnb-text-end -->
 </div>
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiQW5hbHlzaXMgb2YgdGhlIFBPRVRTIGdyYXBocyIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQoKIyMjIEFuYWx5c2luZyBleGlzdGluZyBkYXRhc2V0CkZpcnN0LCBsZXQncyBpbXBvcnQgb25lIG9mIHRoZSBQT0VUUyBncmFwaHM6CmBgYHtyfQpsaWJyYXJ5KGlncmFwaCkKbGlicmFyeShtYWdyaXR0cikgIyBwaXBlIG9wZXJhdG9yCiMgbGlicmFyeShkZXZ0b29scykKIyBkb2N1bWVudChwa2cgPSAiLi9ic3BGdW5jdGlvbnMvIikKbGlicmFyeShic3BGdW5jdGlvbnMpICMgbXkgbGlicmFyeQojIGxpYnJhcnkocGFja2FnZSkKc2V0d2QoIn4vQ29kZS9XYXJ3aWNrL0JTUC9SLyIpCmRhdGEgPC0gcmVhZC50YWJsZSgiLi9hc3AvTmV0d29ya3Mvbm9kZXM0MDAwLmVkZ2VzIiwgc2VwPSIgIiwgc2tpcD0yKQpuNSA8LSBncmFwaF9mcm9tX2RhdGFfZnJhbWUoZCA9IGRhdGEsIGRpcmVjdGVkPVQpCnJtKGRhdGEpICMgcmVtb3ZlIG5hbWUgZnJvbSB3b3Jrc3BhY2UgdG8gcmVkdWNlIGNsdXR0ZXIKYGBgCgpBbmQgY2FsY3VsYXRlIHNvbWUgZGVzY3JpcHRpdmUgc3RhdGlzdGljczoKYGBge3J9CmdvcmRlcihuNSkgICMgbnVtYmVyIG9mIHZlcnRpY2VzCmdzaXplKG41KSAgIyBudW1iZXIgb2YgZWRnZXMKYGBgCkluIGRlZ3JlZSBwbG90dGVkIGluIHJlZCwgb3V0IGRlZ3JlZSBpbiBncmVlbjoKYGBge3J9CnsgIHBsb3QodGFibGUoZGVncmVlKG41LCBtb2RlID0gImluIikpLCB0eXBlID0gInAiLCBjb2w9InJlZCIsIHlsYWIgPSAib2NjdXJlbmNlcyIsIHhsYWIgPSAiZGVncmVlIikKICAgcG9pbnRzKHRhYmxlKGRlZ3JlZShuNSwgbW9kZSA9ICJvdXQiKSksIHR5cGUgPSAicCIsIGNvbD0zKX0KYGBgCklzIHRoZXJlIGFueSBjb3JyZWxhdGlvbiBiZXR3ZWVuIGluIGFuZCBvdXQgZGVncmVlPwpgYGB7cn0KY29yLnRlc3QoZGVncmVlKG41LCBtb2RlID0gImluIiksIGRlZ3JlZShuNSwgbW9kZSA9ICJvdXQiKSkkZXN0aW1hdGUKYGBgCkV4YW1pbmluZyB0aGVzZSBwbG90cyBJIGNvbmplY3R1cmVkIGRpc3RyaWJ1dGlvbiBvZiBkZWdyZWVzIGlzIGxvZy1ub3JtYWwgc2hpZnRlZCBieSBhIGNvbnN0YW50IGZhY3RvciAoMCBjYW5ub3QgYmUgb2J0YWluZWQgb3RoZXJ3aXNlKS4gRml0dGluZyBhIHN1aXRhYmxlIGBsbm9ybTNgIGdpdmVzOgpgYGB7cn0KbG5vcm1fZml0IDwtIGJzcEZ1bmN0aW9uczo6bG5vcm0zX2F1dG9maXQoZGVncmVlKG41LCBtb2RlID0gImFsbCIpKQpwbG90KGxub3JtX2ZpdCkKYGBgClRoZSBmaXQgbG9va3MgcmVhbGx5IGFjY3VyYXRlLiBJdCdzIG5vdyBwb3NzaWJsZSB0byBnZW5lcmF0ZSBhIG5ldyByYW5kb20gZ3JhcGggdXNpbmcgdGhpcyBlc3RpbWF0ZSBhcyBkZWdyZWUgZGlzdHJpYnV0aW9uOiAKYGBge3J9Cmc1IDwtIGdyYXBoRnJvbURpc3QoZ29yZGVyKG41KSAlPiUgcm91bmQsIGxub3JtX2ZpdCkKcXFwbG90KGRlZ3JlZShnNSwgbW9kZT0iYWxsIiksIGRlZ3JlZShuNSwgbW9kZT0iYWxsIikpCmBgYApOZWFybHkgcGVyZmVjdCwganVzdCB0aGUgdGFpbCBpcyBhIGJpdCBmdXNzeS4K</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiQW5hbHlzaXMgb2YgdGhlIFBPRVRTIGdyYXBocyIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQoKIyMjIEFuYWx5c2luZyBleGlzdGluZyBkYXRhc2V0CkZpcnN0LCBsZXQncyBpbXBvcnQgb25lIG9mIHRoZSBQT0VUUyBncmFwaHM6CmBgYHtyfQpsaWJyYXJ5KGlncmFwaCkKbGlicmFyeShtYWdyaXR0cikgIyBwaXBlIG9wZXJhdG9yCiMgbGlicmFyeShkZXZ0b29scykKIyBkb2N1bWVudChwa2cgPSAiLi9ic3BMaWIvIikKbGlicmFyeShic3BMaWIpICMgbXkgbGlicmFyeQojIGxpYnJhcnkocGFja2FnZSkKc2V0d2QoIn4vQ29kZS9XYXJ3aWNrL0JTUC9SLyIpCmRhdGEgPC0gcmVhZC50YWJsZSgiLi9hc3AvTmV0d29ya3Mvbm9kZXM0MDAwLmVkZ2VzIiwgc2VwPSIgIiwgc2tpcD0yKQpuNSA8LSBncmFwaF9mcm9tX2RhdGFfZnJhbWUoZCA9IGRhdGEsIGRpcmVjdGVkPVQpCnJtKGRhdGEpICMgcmVtb3ZlIG5hbWUgZnJvbSB3b3Jrc3BhY2UgdG8gcmVkdWNlIGNsdXR0ZXIKYGBgCgpBbmQgY2FsY3VsYXRlIHNvbWUgZGVzY3JpcHRpdmUgc3RhdGlzdGljczoKYGBge3J9CmdvcmRlcihuNSkgICMgbnVtYmVyIG9mIHZlcnRpY2VzCmdzaXplKG41KSAgIyBudW1iZXIgb2YgZWRnZXMKYGBgCkluIGRlZ3JlZSBwbG90dGVkIGluIHJlZCwgb3V0IGRlZ3JlZSBpbiBncmVlbjoKYGBge3J9CnsgIHBsb3QodGFibGUoZGVncmVlKG41LCBtb2RlID0gImluIikpLCB0eXBlID0gInAiLCBjb2w9InJlZCIsIHlsYWIgPSAib2NjdXJlbmNlcyIsIHhsYWIgPSAiZGVncmVlIikKICAgcG9pbnRzKHRhYmxlKGRlZ3JlZShuNSwgbW9kZSA9ICJvdXQiKSksIHR5cGUgPSAicCIsIGNvbD0zKX0KYGBgCklzIHRoZXJlIGFueSBjb3JyZWxhdGlvbiBiZXR3ZWVuIGluIGFuZCBvdXQgZGVncmVlPwpgYGB7cn0KY29yLnRlc3QoZGVncmVlKG41LCBtb2RlID0gImluIiksIGRlZ3JlZShuNSwgbW9kZSA9ICJvdXQiKSkkZXN0aW1hdGUKYGBgCkV4YW1pbmluZyB0aGVzZSBwbG90cyBJIGNvbmplY3R1cmVkIGRpc3RyaWJ1dGlvbiBvZiBkZWdyZWVzIGlzIGxvZy1ub3JtYWwgc2hpZnRlZCBieSBhIGNvbnN0YW50IGZhY3RvciAoMCBjYW5ub3QgYmUgb2J0YWluZWQgb3RoZXJ3aXNlKS4gRml0dGluZyBhIHN1aXRhYmxlIGBsbm9ybTNgIGdpdmVzOgpgYGB7cn0KbG5vcm1fZml0IDwtIGJzcExpYjo6bG5vcm0zX2F1dG9maXQoZGVncmVlKG41LCBtb2RlID0gImFsbCIpKQpwbG90KGxub3JtX2ZpdCkKYGBgClRoZSBmaXQgbG9va3MgcmVhbGx5IGFjY3VyYXRlLiBJdCdzIG5vdyBwb3NzaWJsZSB0byBnZW5lcmF0ZSBhIG5ldyByYW5kb20gZ3JhcGggdXNpbmcgdGhpcyBlc3RpbWF0ZSBhcyBkZWdyZWUgZGlzdHJpYnV0aW9uOiAKYGBge3J9Cmc1IDwtIGdyYXBoRnJvbURpc3QoZ29yZGVyKG41KSAlPiUgcm91bmQsIGxub3JtX2ZpdCkKcXFwbG90KGRlZ3JlZShnNSwgbW9kZT0iYWxsIiksIGRlZ3JlZShuNSwgbW9kZT0iYWxsIikpCmBgYApOZWFybHkgcGVyZmVjdCwganVzdCB0aGUgdGFpbCBpcyBhIGJpdCBmdXNzeS4K</div>
 
 
 
