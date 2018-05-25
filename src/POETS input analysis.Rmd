@@ -4,15 +4,16 @@ output: html_notebook
 ---
 
 ### Analysing existing dataset
-First, let's import one of the POETS graphs:
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 library(igraph)
 library(magrittr) # pipe operator
 library(devtools)
 document(pkg = "./src/bspLib/")
 library(bspLib) # my library
 getwd()
-
+```
+First, let's import one of the POETS graphs:
+```{r}
 data <- read.table("./external/asp/Networks/n5.edges", sep=" ", skip=2)
 n5 <- graph_from_data_frame(d = data, directed=T)
 rm(data) # remove name from workspace to reduce clutter
@@ -24,7 +25,7 @@ gorder(n5)  # number of vertices
 gsize(n5)  # number of edges
 ```
 In degree plotted in red, out degree in green:
-```{r}
+```{r echo=FALSE}
 {  plot(table(degree(n5, mode = "in")), type = "p", col="red", ylab = "occurences", xlab = "degree")
    points(table(degree(n5, mode = "out")), type = "p", col=3)}
 ```
@@ -43,3 +44,29 @@ g5 <- graphFromDist(gorder(n5) %>% round, lnorm_fit)
 qqplot(degree(g5, mode="all"), degree(n5, mode="all"))
 ```
 Nearly perfect, just the tail is a bit fussy.
+
+
+### Statistics for all the graphs
+```{r}
+netPaths <- list.files("./external/asp/Networks/")
+nets <- netPath %>% list.files %>% lapply(function(x) bspLib::readPOETSGraph(paste0(netPath, x)))
+preds <- nets %>% sapply(function(x) bspLib::lnorm3_autofit(degree(x)))
+df <- data.frame(preds["estimate",] %>% sapply(c) %>% t,
+                 nodes = sapply(nets, gorder),
+                 edges = sapply(nets, gsize),
+                 names = netPath %>% list.files)
+```
+Artificial graphs:
+```{r}
+range <- 5:8
+df$m
+plot(df[range, c("nodes", "meanlog", "threshold")])
+```
+Natural graphs:
+```{r}
+fitdist(degree(nets[[1]]), distr="norm") %>% plot
+fitdist(degree(nets[[2]]), distr="exp") %>% plot
+fitdist(degree(nets[[3]]), distr="exp") %>% plot
+fitdist(degree(nets[[4]]), distr="exp") %>% plot
+```
+
