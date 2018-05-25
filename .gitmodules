@@ -1,0 +1,4 @@
+[submodule "external/asp"]
+	url = https://github.com/POETSII/asp.git
+[submodule "external/rigraph"]
+	url = https://github.com/igraph/rigraph.git

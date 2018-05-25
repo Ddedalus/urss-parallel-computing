@@ -8,12 +8,12 @@ First, let's import one of the POETS graphs:
 ```{r}
 library(igraph)
 library(magrittr) # pipe operator
-# library(devtools)
-# document(pkg = "./bspLib/")
+library(devtools)
+document(pkg = "./src/bspLib/")
 library(bspLib) # my library
-# library(package)
-setwd("~/Code/Warwick/BSP/R/")
-data <- read.table("./asp/Networks/nodes4000.edges", sep=" ", skip=2)
+getwd()
+
+data <- read.table("./external/asp/Networks/n5.edges", sep=" ", skip=2)
 n5 <- graph_from_data_frame(d = data, directed=T)
 rm(data) # remove name from workspace to reduce clutter
 ```
