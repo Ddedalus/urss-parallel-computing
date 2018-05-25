@@ -1,5 +1,5 @@
 ---
-title: "Basics of linear regression"
+title: "lm intro"
 output: html_notebook
 ---
 
