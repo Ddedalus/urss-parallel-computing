@@ -16,8 +16,8 @@ To include a new function into a shared library:
     dyn.load("doubler.so")  # load the function under it's original name
     .C("double_me", x = as.integer(5))  # call, all parameters must be pointers
 ```{r}
-dyn.load("doubler.so")
-.C("double_me", x = as.integer(5))
+# dyn.load("doubler.so")
+# .C("double_me", x = as.integer(5))
 ```
 
 There are 2 other ways to accomplish the same task. You can either use .Call which is bloody complicated and recommended way for professionals or use Rcpp which should cover both C and C++. Let's have a look:
@@ -25,14 +25,24 @@ There are 2 other ways to accomplish the same task. You can either use .Call whi
 Create file with normal C function, add some headers and a magic comment. See doubler3.cpp for details.
 Then just execute:
 ```{r}
-library(Rcpp)
-sourceCpp("doubler3.cpp")
-double_me3(5)
+# library(Rcpp)
+# sourceCpp("doubler3.cpp")
+# double_me3(5)
 ```
 Voila! Works like a charm.
 Limitations: file may not have dependencies other than R packages (see Rcpp::depends). Long -> numeric conversion is dangerous etc.
 Source: http://anythingbutrbitrary.blogspot.co.uk/2014/02/three-ways-to-call-cc-from-r.html
 
 
+Tests:
+1. Run POETS function with any efficiency overhead %>% commit
+2. Pass data from igraph object %>% commit
+3. design %>% Precompute adjacency list (with R or C) %>% commit
 
+```{r}
+library(Rcpp)
+sourceCpp("their_bfs.cpp")
+path <- paste0("/home/hubert/Code/Warwick/BSP/", "external/asp/Networks/n5.edges")
+Cbfs(path)
+```
 
