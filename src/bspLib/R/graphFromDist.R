@@ -1,8 +1,7 @@
 #' Return a graph with given size and edge distribution
 #' Is an inputGenerator for Time Machine
 #' @param distrfit - return value of fitdistrplu::fitdistr call. This function only requires fields "distname" and "estimate"
-#' @param size - how many vertices should the graph have? 
-#' 
+#' @param size - how many vertices should the graph have?
 #' @export
 graphFromDist <- function(size, distrfit) {
   rdist <- paste0("r", distrfit$distname) %>% get # name of the sampling function
