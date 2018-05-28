@@ -35,14 +35,22 @@ Source: http://anythingbutrbitrary.blogspot.co.uk/2014/02/three-ways-to-call-cc-
 
 
 Tests:
-1. Run POETS function with any efficiency overhead %>% commit
+Done. 1. Run POETS function with any efficiency overhead %>% commit
 2. Pass data from igraph object %>% commit
 3. design %>% Precompute adjacency list (with R or C) %>% commit
 
 ```{r}
 library(Rcpp)
+library(bspLib)
+path <- paste0("/home/hubert/Code/Warwick/BSP/", "external/asp/Networks/n1.edges")
+```
+
+```{r}
+
 sourceCpp("their_bfs.cpp")
-path <- paste0("/home/hubert/Code/Warwick/BSP/", "external/asp/Networks/n5.edges")
+ig <- bspLib::readPOETSGraph(path)
+adj <- as_adj_list(ig) %>% mapply(as.vector, .) %>% mapply(add length?, ...)
+adj[[1]] %>% as.vector()
 Cbfs(path)
 ```
 
