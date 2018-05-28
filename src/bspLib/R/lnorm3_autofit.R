@@ -1,5 +1,6 @@
 #' fit lognormal distribution with a shift parameter
 #' @return fit class from fitdistrplus. Use return$estimate to obtain fitted parameters. See ?fitdistrplus for more info
+#' @export
 lnorm3_autofit <- function(samples) {
   require(fitdistrplus); require(EnvStats); require(stats)
   init_vals <- fitdist(samples + 1, "lnorm")$estimate

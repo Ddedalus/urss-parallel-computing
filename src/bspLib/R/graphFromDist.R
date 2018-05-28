@@ -2,6 +2,8 @@
 #' Is an inputGenerator for Time Machine
 #' @param distrfit - return value of fitdistrplu::fitdistr call. This function only requires fields "distname" and "estimate"
 #' @param size - how many vertices should the graph have? 
+#' 
+#' @export
 graphFromDist <- function(size, distrfit) {
   rdist <- paste0("r", distrfit$distname) %>% get # name of the sampling function
   new_degs <-  do.call(rdist, args = as.list(c(size, distrfit$estimate))) %>% round # sample degree of each node

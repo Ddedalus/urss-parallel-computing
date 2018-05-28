@@ -15,6 +15,8 @@
 #' @param inputArgs optional arguments to be passed to inputGenerator
 #' 
 #' @return A data frame containing size of the input and measured runtime. May store additional specification, too.
+#' 
+#' @export
 runOnSizes <- function(algo, inputGenerator,
                      sizes = c(10, 100), timeLimit = 60,
                      algArgs = c(), inputArgs = NULL) {

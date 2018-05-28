@@ -1,4 +1,5 @@
 #' given a path to file with columns "from" and "to", returns igraph object
+#' @export
 readPOETSGraph <- function(path) {
   require(igraph)
   data <- read.table(path, sep=" ", skip=2)
