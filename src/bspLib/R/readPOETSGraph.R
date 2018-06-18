@@ -6,5 +6,5 @@ readPOETSGraph <- function(path) {
     stop("No such file found!")
   }
   data <- read.table(path, sep=" ", skip=2)
-  graph_from_data_frame(d = data, directed=T)
+  graph_from_data_frame(d = data, directed=F)
 }

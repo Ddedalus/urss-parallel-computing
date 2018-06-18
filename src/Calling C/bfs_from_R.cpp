@@ -54,6 +54,7 @@ void readGraph(const char* filename)
   fclose(fp);
 }
 
+
 // Compute sum of all shortest paths
 uint64_t ssp()
 {
@@ -111,25 +112,20 @@ double Cbfs(std::string path){
   return ssp() / ((numNodes - 1)*(numNodes)/2.0);
 }
 
-int main(int argc, char**argv)
-{
-  if (argc != 2) {
-    printf("Specify edges file\n");
-    exit(EXIT_FAILURE);
+// [[Rcpp::export]]
+double Cbfs_list(Rcpp::List l){
+  numNodes = (uint32_t) l.length();
+  numEdges = 0;
+  neighbours = (uint32_t**) calloc(numNodes, sizeof(uint32_t*));
+  
+  for(uint32_t i = 0; i < numNodes; i++){
+    Rcpp::NumericVector a = (Rcpp::NumericVector) l[i];
+    neighbours[i] = (uint32_t*) calloc(a.length()+1, sizeof(uint32_t));
+    neighbours[i][0] = a.length();
+    numEdges += a.length();
+    for(uint32_t j = 0; j < neighbours[i][0]; j++){
+      neighbours[i][j+1] = a[j];
+    }
   }
-  readGraph(argv[1]);
-
-  struct timeval start, finish, diff;
-
-  gettimeofday(&start, NULL);
-  uint64_t sum = ssp();
-  gettimeofday(&finish, NULL);
-
-  printf("Sum of shortest paths = %lu\n", sum);
- 
-  timersub(&finish, &start, &diff);
-  double duration = (double) diff.tv_sec + (double) diff.tv_usec / 1000000.0;
-  printf("Time = %lf\n", duration);
-
-  return 0;
+  return ssp() / ((numNodes - 1)*(numNodes)/2.0);
 }

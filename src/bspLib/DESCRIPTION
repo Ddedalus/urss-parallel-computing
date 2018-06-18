@@ -3,7 +3,7 @@ Title: Gathers functions used across the BSP project
 Version: 0.0.0.9000
 Author: person("Hubert", "Beres", role="aut", email = "h.beres@warwick.ac.uk")
 Description: Graph generating, distribution fitting, time machine
-Depends: R (>= 3.4.4)
+Depends: R (>= 3.4.3)
 License: Open
 Encoding: UTF-8
 LazyData: true

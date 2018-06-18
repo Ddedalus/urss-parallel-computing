@@ -46,11 +46,13 @@ path <- paste0("/home/hubert/Code/Warwick/BSP/", "external/asp/Networks/n1.edges
 ```
 
 ```{r}
-
-sourceCpp("their_bfs.cpp")
 ig <- bspLib::readPOETSGraph(path)
-adj <- as_adj_list(ig) %>% mapply(as.vector, .) %>% mapply(add length?, ...)
-adj[[1]] %>% as.vector()
-Cbfs(path)
+adj_list  <- ig %>% as_adj_list %>% lapply(function(x) as.vector(x-1))
+# C counts from zero, hence an index shift is needed!
+```
+
+```{r}
+sourceCpp("bfs_from_R.cpp")
+Cbfs_list(adj_list)
 ```
 
