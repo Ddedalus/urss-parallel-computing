@@ -5,7 +5,7 @@ output: html_notebook
 
 ## Input generator
 Use a POETS graph to obtain a realistic distribution function:
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 library(here)
 library(bspLib)
 R.cache::setCacheRootPath(here("data", "cache"))
@@ -17,6 +17,19 @@ Define an algorithm to be tested, for now just the default distance estimation f
 algoDistances <- function(g, params) {  # params will be passed by Timing Machine, ignored for now
   require(igraph)
   distances(g)
+}
+```
+Function call from C:
+```{r}
+library(Rcpp)
+sourceCpp("bfs_from_R.cpp")
+algoCDistances <- function(g, params) {
+  # g must be an adjacency list here. No params taken
+    Cbfs_list(g)
+}
+adjListFromDistr(size, distr){
+  g <- graphFromDist(size, distr)
+  g %>% as_adj_list %>% lapply(function(x) as.vector(x-1))
 }
 ```
 
