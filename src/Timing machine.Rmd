@@ -40,47 +40,7 @@ adjListFromDistr <- function(size, distr){
 ## Run series of sizes
 Specyfying a range of input sizes we can obtain runtimes of the algorithm with a single function call:
 ```{r}
-sizes <- seq(200, to = 5000, by = 200)
-
-runOnSizes <- function(algo, inputGenerator,
-                             sizes = c(10, 100), timeLimit = 60,
-                             algArgs = c(), inputArgs = NULL) {
-  require(utils); require(igraph) # this should not be required here
-  require(R.cache) # memoization feature
-
-  pbTime <- txtProgressBar(min=0, max = timeLimit, style=3)
-  startTime  <- Sys.time()
-  edges <- numeric(length = length(sizes))
-  nodes <- numeric(length = length(sizes))
-  elapsed <- numeric(length = length(sizes))
-  
-  runtime <- 0
-  for(i in 1:length(sizes)){
-    setTxtProgressBar(pbTime, runtime)
-    g <- inputGenerator(sizes[i], inputArgs)
-    elapsed[i] <- system.time(
-      algo(g, algArgs)
-    )["elapsed"]
-    if(is(g, "igraph")){
-      nodes[i] <- gorder(g)  # replace with a generic function call
-      edges[i] <- gsize(g)
-    }else{
-      nodes[i] <- attr(g, 'nodes')  # replace with a generic function call
-      edges[i] <- attr(g, 'edges')
-    }
-      
-    runtime <- difftime(Sys.time(), startTime, units = "secs") 
-    if(runtime > timeLimit){
-      elapsed <- elapsed[1:i]
-      nodes <- nodes[1:i]  # this renders difficult in implementation as generic
-      edges <- edges[1:i]
-      message("\nTimed out at i=", i)
-      break
-    }
-  }
-  data.frame(edges, nodes, elapsed)
-  # add alg name, processors + architecture later
-}
+sizes <- seq(200, to = 2000, by = 200)
 ```
 The same series on C algorithm:
 ```{r}

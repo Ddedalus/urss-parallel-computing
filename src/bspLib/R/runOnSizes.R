@@ -1,15 +1,16 @@
 #' Private, aliased as runOnSizes()
 runOnSizesWorker <- function(algo, inputGenerator,
-                             sizes = c(10, 100), timeLimit = 60,
-                             algArgs = c(), inputArgs = NULL) {
+                       sizes = c(10, 100), timeLimit = 60,
+                       algArgs = c(), inputArgs = NULL) {
   require(utils); require(igraph) # this should not be required here
   require(R.cache) # memoization feature
-
+  
   pbTime <- txtProgressBar(min=0, max = timeLimit, style=3)
   startTime  <- Sys.time()
-  edges <- numeric(length = length(sizes)) # breaks generality of this function. Fix it later
+  edges <- numeric(length = length(sizes))
   nodes <- numeric(length = length(sizes))
   elapsed <- numeric(length = length(sizes))
+  
   runtime <- 0
   for(i in 1:length(sizes)){
     setTxtProgressBar(pbTime, runtime)
@@ -17,8 +18,14 @@ runOnSizesWorker <- function(algo, inputGenerator,
     elapsed[i] <- system.time(
       algo(g, algArgs)
     )["elapsed"]
-    nodes[i] <- gorder(g)  # replace with a generic function call
-    edges[i] <- gsize(g)
+    if(is(g, "igraph")){
+      nodes[i] <- gorder(g)  # replace with a generic function call
+      edges[i] <- gsize(g)
+    }else{
+      nodes[i] <- attr(g, 'nodes')  # replace with a generic function call
+      edges[i] <- attr(g, 'edges')
+    }
+    
     runtime <- difftime(Sys.time(), startTime, units = "secs") 
     if(runtime > timeLimit){
       elapsed <- elapsed[1:i]
