@@ -22,29 +22,85 @@ algoDistances <- function(g, params) {  # params will be passed by Timing Machin
 Function call from C:
 ```{r}
 library(Rcpp)
-sourceCpp("bfs_from_R.cpp")
+sourceCpp(here("src", "bfs_from_R.cpp"))
 algoCDistances <- function(g, params) {
   # g must be an adjacency list here. No params taken
     Cbfs_list(g)
 }
-adjListFromDistr(size, distr){
+
+adjListFromDistr <- function(size, distr){
   g <- graphFromDist(size, distr)
-  g %>% as_adj_list %>% lapply(function(x) as.vector(x-1))
+  g2  <- g %>% as_adj_list %>% lapply(function(x) as.vector(x-1))
+  attr(g2, 'nodes') <- gorder(g)
+  attr(g2, 'edges') <- gsize(g)
+  g2
 }
 ```
 
 ## Run series of sizes
 Specyfying a range of input sizes we can obtain runtimes of the algorithm with a single function call:
 ```{r}
-sizes <- seq(200, to = 5000, by = 200)
+sizes <- seq(200, to = 2000, by = 200)
+
+runOnSizes <- function(algo, inputGenerator,
+                             sizes = c(10, 100), timeLimit = 60,
+                             algArgs = c(), inputArgs = NULL) {
+  require(utils); require(igraph) # this should not be required here
+  require(R.cache) # memoization feature
+
+  pbTime <- txtProgressBar(min=0, max = timeLimit, style=3)
+  startTime  <- Sys.time()
+  edges <- numeric(length = length(sizes))
+  nodes <- numeric(length = length(sizes))
+  elapsed <- numeric(length = length(sizes))
+  
+  runtime <- 0
+  for(i in 1:length(sizes)){
+    setTxtProgressBar(pbTime, runtime)
+    g <- inputGenerator(sizes[i], inputArgs)
+    elapsed[i] <- system.time(
+      algo(g, algArgs)
+    )["elapsed"]
+    if(is(g, "igraph")){
+      nodes[i] <- gorder(g)  # replace with a generic function call
+      edges[i] <- gsize(g)
+    }else{
+      nodes[i] <- attr(g, 'nodes')  # replace with a generic function call
+      edges[i] <- attr(g, 'edges')
+    }
+      
+    runtime <- difftime(Sys.time(), startTime, units = "secs") 
+    if(runtime > timeLimit){
+      elapsed <- elapsed[1:i]
+      nodes <- nodes[1:i]  # this renders difficult in implementation as generic
+      edges <- edges[1:i]
+      message("\nTimed out at i=", i)
+      break
+    }
+  }
+  data.frame(edges, nodes, elapsed)
+  # add alg name, processors + architecture later
+}
+```
+The same series on C algorithm:
+```{r}
+     # to be automated, use precomputed values if available
+  resC <- runOnSizes(algoCDistances, adjListFromDistr,
+                  sizes, 300,
+                  inputArgs = dfit, algArgs = c())
+```
+Run series on standard `igraph` algorithm:
+```{r}
      # to be automated, use precomputed values if available
   res <- runOnSizes(algoDistances, graphFromDist,
                   sizes, 300,
                   inputArgs = dfit, algArgs = c())
 ```
 
+
 ```{r}
-plot(res$nodes, res$elapsed)
+{plot(res$nodes, res$elapsed, col="red")
+points(resC$nodes, resC$elapsed, col="green")}
 ```
 Having gathered enough datapoints one can fit a linear model and asses visually how it matches the data:
 ```{r results="hide"}
