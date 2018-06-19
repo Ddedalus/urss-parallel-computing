@@ -40,7 +40,7 @@ adjListFromDistr <- function(size, distr){
 ## Run series of sizes
 Specyfying a range of input sizes we can obtain runtimes of the algorithm with a single function call:
 ```{r}
-sizes <- seq(200, to = 2000, by = 200)
+sizes <- seq(200, to = 5000, by = 200)
 
 runOnSizes <- function(algo, inputGenerator,
                              sizes = c(10, 100), timeLimit = 60,
@@ -127,9 +127,9 @@ bigres <- runOnSizes(algoDistances, graphFromDist,
 
 ```{r}
 total <- rbind(res, bigres)
-total$pred <- predict(squarefit, newdata = total)
+total$pred <- predict(squarefit, newdata = total, interval = "prediction")
 
-matplot(total$nodes, total[c("pred", "elapsed")], col = c("green", "red"), pch = c(1, 19))
+matplot(total$nodes, total[c("pred", "elapsed")], col = c("red", "red", "red", "green"), pch = c(19, 1, 1, 19))
 ```
 It comes out the prediction is a bit undershot but catches nonlinear behaviour of the data.
 
