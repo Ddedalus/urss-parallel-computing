@@ -6,8 +6,6 @@ output: html_notebook
 ## Input generator
 Use a POETS graph to obtain a realistic distribution function:
 ```{r message=FALSE, warning=FALSE, include=FALSE}
-library(here)
-library(bspLib)
 R.cache::setCacheRootPath(here("data", "cache"))
 sourceG <- bspLib::readPOETSGraph(here( "external", "asp", "Networks", "nodes8000.edges"))
 dfit <- lnorm3_autofit(degree(sourceG))
@@ -40,21 +38,24 @@ adjListFromDistr <- function(size, distr){
 ## Run series of sizes
 Specyfying a range of input sizes we can obtain runtimes of the algorithm with a single function call:
 ```{r}
-sizes <- seq(200, to = 5000, by = 200)
+sizes <- seq(200, to = 2000, by = 200)
 ```
 The same series on C algorithm:
 ```{r}
      # to be automated, use precomputed values if available
-  resC <- runOnSizes(algoCDistances, adjListFromDistr,
-                  sizes, 300,
-                  inputArgs = dfit, algArgs = c())
+resC <- runOnSizes(algoCDistances, adjListFromDistr,
+                   sizes, 300,
+                   inputArgs = dfit, algArgs = c())
 ```
 Run series on standard `igraph` algorithm:
 ```{r}
-     # to be automated, use precomputed values if available
-  res <- runOnSizes(algoDistances, graphFromDist,
+# to be automated, use precomputed values if available
+res <- runOnSizes(algoDistances, graphFromDist,
                   sizes, 300,
                   inputArgs = dfit, algArgs = c())
+res$algorithm <- factor(x = "igraph.average.path")
+resC$algorithm <- factor(x = "CDistances")
+res <- rbind(res, resC); remove(resC)
 ```
 
 
