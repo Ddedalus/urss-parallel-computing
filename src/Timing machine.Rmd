@@ -16,7 +16,7 @@ Define an algorithm to be tested, for now just the default distance estimation f
 ```{r}
 algoDistances <- function(g, params) {  # params will be passed by Timing Machine, ignored for now
   require(igraph)
-  distances(g)
+  average.path.length(g)
 }
 ```
 Function call from C:
@@ -40,7 +40,7 @@ adjListFromDistr <- function(size, distr){
 ## Run series of sizes
 Specyfying a range of input sizes we can obtain runtimes of the algorithm with a single function call:
 ```{r}
-sizes <- seq(200, to = 2000, by = 200)
+sizes <- seq(200, to = 5000, by = 200)
 ```
 The same series on C algorithm:
 ```{r}
@@ -59,8 +59,8 @@ Run series on standard `igraph` algorithm:
 
 
 ```{r}
-{plot(res$nodes, res$elapsed, col="red")
-points(resC$nodes, resC$elapsed, col="green")}
+{plot(resC$nodes, resC$elapsed, col="red")
+points(res$nodes, res$elapsed, col="green")}
 ```
 Having gathered enough datapoints one can fit a linear model and asses visually how it matches the data:
 ```{r results="hide"}
