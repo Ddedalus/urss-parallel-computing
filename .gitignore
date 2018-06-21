@@ -42,3 +42,13 @@ vignettes/*.pdf
 # VIM temporary files
 /**/*.un~
 *~
+
+external/EPMs_paper/data/
+
+external/EPMs_paper/AMAI_data/
+
+external/EPMs_paper/MIP/
+
+external/EPMs_paper/SAT/
+
+external/EPMs_paper/TSP/
