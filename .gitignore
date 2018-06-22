@@ -52,3 +52,11 @@ external/EPMs_paper/MIP/
 external/EPMs_paper/SAT/
 
 external/EPMs_paper/TSP/
+
+external/EPMs_paper/
+
+src/TSP/qsopt/
+
+src/TSP/instances/
+
+src/TSP/concorde/
