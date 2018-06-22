@@ -60,3 +60,5 @@ src/TSP/qsopt/
 src/TSP/instances/
 
 src/TSP/concorde/
+src/Calling C/bfs
+src/Calling C/*.out
