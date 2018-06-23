@@ -27,8 +27,8 @@ void readGraph(string filename)
 	uint32_t from, to;
 	for(uint32_t i = 0; i < numEdges; i++){
 		fp >> from >> to;
-		neighbours[from].push_back(to);
-		neighbours[to].push_back(from);
+		// version suitable for Higher computing
+		neighbours[min(from, to)].push_back(max(from, to));
 	}
 	fp.close();
 	return;
