@@ -28,6 +28,7 @@ void readGraph(string filename)
 	for(uint32_t i = 0; i < numEdges; i++){
 		fp >> from >> to;
 		neighbours[from].push_back(to);
+		neighbours[to].push_back(from);
 	}
 	fp.close();
 	return;
@@ -57,14 +58,48 @@ uint32_t vertexSSP(uint32_t v){
 	return sum;
 }
 
+// sum of shortest paths only to the vertices higher than this one
+double vertexHigherSSP(uint32_t v){
+	uint32_t sum = 0,d = 1;
+	vector<bool> visited(numNodes, false);
+	vector<uint32_t> fringe(numNodes - v);
+	vector<uint32_t> newFringe(numNodes - v);
+	fringe[0] = v;
+	while(! fringe.empty()){
+		for(uint32_t x : fringe){
+			for(auto n : neighbours[x]){
+				if(n > v && !visited[n-v-1]){
+					newFringe.push_back(n);
+					visited[n-v-1] = true;
+					sum+=d;
+				}
+			}
+		}
+		fringe.clear();
+		fringe.swap(newFringe);
+		d++;
+	}	
+	return sum;
+}
+
 double serialASP(){
 	double avg = 0.;
 	for(uint32_t v = 0; v < numNodes; v++){
-		avg += vertexSSP(v) / (1.0 * numNodes);
+		avg += vertexSSP(v)* 1. / (numNodes - 1);
 	}
 	return avg /(1.0 * numNodes);
 
 }
+
+double serialHigherASP(){
+	uint64_t avg = 0.;
+	for(uint32_t v = 0; v < numNodes; v++){
+		avg += vertexHigherSSP(v);
+	}
+	return avg * 2.0 /(numNodes * (numNodes - 1));
+
+}
+
 
 int main(){
 	string path = "/home/hubert/Code/Warwick/BSP/external/asp/Networks/n5.edges";
@@ -72,7 +107,7 @@ int main(){
 	for(uint32_t v = 0; v < numNodes; v++){
 		// cout<<vertexSSP(v)<<endl;
 	}
-	cout<< serialASP()<<endl;
+	// cout<< serialASP()<<endl;
 	return 0;
 }
 
