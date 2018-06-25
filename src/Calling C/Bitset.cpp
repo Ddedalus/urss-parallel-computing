@@ -13,7 +13,10 @@ Bitset::Bitset(uint32_t size, uint64_t* content) : Bitset(size){
 }
 
 void Bitset::set(int pos, bool val){
-    storage[pos/64] = storage[pos/64] | (val ? 1ul << (pos%64) : 0ul);
+    if(val) // one only at pos
+        storage[pos/64] = storage[pos/64] | (1ul << (pos%64));
+    else // zero only at pos
+        storage[pos/64] = storage[pos/64] & ~(1ul << (pos%64));
 }
 
 bool Bitset::get(int pos){
@@ -68,9 +71,12 @@ void Bitset::copy_from(const Bitset& other){
 }
 
 bool Bitset::is_full(){
-    for(uint32_t k = 0; k < chunks; k++){
-        if(storage[k] != INT64_MAX)
+    for(uint32_t k = 0; k < chunks-1; k++){
+        if(storage[k] != ~0ul)
             return false;
-    }
+    }   // check the full chunks quickly
+    if( __builtin_popcountll(storage[chunks-1]) < (size % 64))
+        return false;
+
     return true;
 }

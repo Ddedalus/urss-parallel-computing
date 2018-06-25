@@ -16,7 +16,7 @@ class Bitset
     public:
         Bitset(uint32_t size);
 
-        void set(int pos, bool val);
+        void set(int pos, bool val=true);
 
         bool get(int pos);
 

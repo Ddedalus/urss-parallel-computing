@@ -63,3 +63,5 @@ src/TSP/concorde/
 src/Calling C/bfs
 src/Calling C/*.out
 src/Calling C/.vscode/settings.json
+
+src/Calling C/\.vscode/
