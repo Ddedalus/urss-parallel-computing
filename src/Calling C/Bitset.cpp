@@ -20,9 +20,7 @@ void Bitset::set(int pos, bool val){
 }
 
 bool Bitset::get(int pos){
-    // std::cout << "Storage: " << storage[pos/64] << " ";
     uint64_t ass = storage[pos/64] & (1ul << pos%64);
-    // std::cout << "OR " << ass;
     return  ass != 0ul;
 }
 
@@ -33,7 +31,7 @@ void Bitset::operator+=(const Bitset& other){
 }
 
 Bitset Bitset::operator+(const Bitset& other){
-    uint64_t* ret = new uint64_t[chunks];
+    uint64_t ret[chunks];
     for(int k = 0; k < chunks; k++){
         ret[k] = storage[k] | other.storage[k];
     }
@@ -49,7 +47,7 @@ uint32_t Bitset::count(){
 }
 
 Bitset Bitset::diff(const Bitset& other){
-    uint64_t* ret = new uint64_t[chunks];
+    uint64_t ret[chunks];
     for(int k = 0; k < chunks; k++){
         ret[k] = storage[k] & ~other.storage[k];
     }
