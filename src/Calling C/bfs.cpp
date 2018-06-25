@@ -1,7 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
-#include <queue>
+#include <deque>
 
 using namespace std;
 // Number of nodes and edges
@@ -43,13 +43,13 @@ struct qNode{
 double vertexSSP(uint32_t v){
 	uint32_t sum = 0;
 	vector<bool> visited(numNodes, false);
-	queue<qNode> q;	// greater memory flexibility
-	q.push({v, 0}); visited[v] = true;
+	deque<qNode> q;	// greater memory flexibility
+	q.push_back({v, 0}); visited[v] = true;
 	while(!q.empty()){
-		qNode current = q.front(); q.pop();
+		qNode current = q.front(); q.pop_front();
 		for(uint32_t n : neighbours[current.node]){
 			if(! visited[n]){
-				q.push({n, current.distance + 1});
+				q.push_back({n, current.distance + 1});
 				sum += current.distance + 1;
 				visited[n] = true;
 			}

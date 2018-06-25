@@ -42,13 +42,14 @@ Done. 1. Run POETS function with any efficiency overhead %>% commit
 ```{r}
 library(Rcpp)
 library(bspLib)
-path <- paste0("/home/hubert/Code/Warwick/BSP/", "external/asp/Networks/n1.edges")
+path <- paste0("/home/hubert/Code/Warwick/BSP/", "external/asp/Networks/n5.edges")
 ```
 
 ```{r}
 ig <- bspLib::readPOETSGraph(path)
 adj_list  <- ig %>% as_adj_list %>% lapply(function(x) as.vector(x-1))
 # C counts from zero, hence an index shift is needed!
+average.path.length(ig)
 ```
 
 ```{r}
