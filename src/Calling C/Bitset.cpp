@@ -72,7 +72,7 @@ void Bitset::copy_from(const Bitset& other){
 
 bool Bitset::is_full(){
     for(uint32_t k = 0; k < chunks-1; k++){
-        if(storage[k] != ~0ul)
+        if(__builtin_popcountll(storage[k]) < 64)
             return false;
     }   // check the full chunks quickly
     if( __builtin_popcountll(storage[chunks-1]) < (size % 64))

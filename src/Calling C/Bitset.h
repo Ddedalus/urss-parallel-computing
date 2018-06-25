@@ -7,7 +7,7 @@
 class Bitset
 {
     private:
-        std::vector<uint32_t> storage;
+        std::vector<uint64_t> storage;
         uint32_t size;
         uint32_t chunks;
 
