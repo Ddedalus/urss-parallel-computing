@@ -65,3 +65,5 @@ src/Calling C/*.out
 src/Calling C/.vscode/settings.json
 
 src/Calling C/\.vscode/
+src/Calling C/casp
+src/Calling C/caspc
