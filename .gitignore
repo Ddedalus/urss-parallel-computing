@@ -70,3 +70,5 @@ src/Calling C/caspc
 src/Calling C/main
 
 external/SNAP/
+
+src/cpp/build/
