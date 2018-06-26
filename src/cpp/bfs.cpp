@@ -67,10 +67,3 @@ double serialASP(){
 
 }
 
-int main(){
-	string path = "/home/hubert/Code/Warwick/BSP/external/asp/Networks/n5.edges";
-	readGraph(path);
-	cout<< serialASP()<<endl;
-	return 0;
-}
-

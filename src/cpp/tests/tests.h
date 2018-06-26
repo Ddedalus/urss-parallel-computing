@@ -12,10 +12,5 @@ void bitst_rough();
 
 void graph_io_test();
 
-void all_tests(){
-    std::cout << "   ---   Testing   ---   \n" << std::endl;
-    bitset_test();
-    std::cout << " --- Finished Testing --- \n" << std::endl;
-}
-
+void all_tests();
 #endif
