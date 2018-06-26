@@ -1,9 +1,6 @@
-#include "Bitset.h"
-#include <iostream>
-#include <vector>
+#include "tests/tests.h"
 
 using namespace std;
-
 void bitset_test(){
     cout << "    --   Bitset  --  " << endl;
     Bitset b = Bitset(3), l = Bitset(70);
@@ -44,13 +41,7 @@ void bitset_test(){
 
 }
 
-int main(){
-    cout << "   ---   Testing   ---   " << endl;
-
-    bitset_test();
-    cout << "         Other tests"<< endl;
-
+void bitset_rough(){
     cout<< "All 1s in hex: " << hex << ~0ul << endl;
     cout<< "2^63 in hex: " << hex << (1ul << 63) << endl;
-    return 0;
 }
