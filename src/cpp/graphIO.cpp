@@ -2,29 +2,29 @@
 
 using namespace std;
 
-void convertToBinary(std::string filename, std::string outfilename){
-    std::ifstream input(filename);
-    std::ofstream output(outfilename, std::ios::binary | std::ios::out);
+void convertToBinary(string filename, string outfilename){
+    ifstream input(filename);
+    ofstream output(outfilename, ios::binary | ios::out);
 
-    std::string word;
+    string word;
     uint32_t numEdges = 0, numNodes = 0, directed =1;
     while(input.peek() == '#'){ // comments section
-        std::string line; std::getline(input, line);
-        std::istringstream ss(line);
+        string line; getline(input, line);
+        istringstream ss(line);
         while(ss>>word){
-            if(word.find("Edges") != std::string::npos)
+            if(word.find("Edges") != string::npos)
                 ss >> numEdges;
-            else if(word.find("Vertices") != std::string::npos ||
-                    word.find("Nodes") != std::string::npos)
+            else if(word.find("Vertices") != string::npos ||
+                    word.find("Nodes") != string::npos)
                 ss >> numNodes;
-            else if(word.find("Undirected") != std::string::npos)
+            else if(word.find("Undirected") != string::npos)
                 directed = 0;
         }
     }
-    std::cout<<"Found: Nodes="<<numNodes<<" Edges="<<numEdges<< std::endl;
+    cout<<"Found: Nodes="<<numNodes<<" Edges="<<numEdges<< endl;
 
     if(!numEdges)
-        std::cout<<"Couldn't find out how many edges are there!" << std::endl;
+        cout<<"Couldn't find out how many edges are there!" << endl;
 
     uint32_t from, to, counter = 0, maxNode = 0;
     while(input >> from >> to){
@@ -35,17 +35,17 @@ void convertToBinary(std::string filename, std::string outfilename){
             maxNode = from < to ? to : from;
     }
     if(numEdges != 0 && numEdges != counter)
-        std::cout<<"Number of edges different than declared!" << std::endl;
+        cout<<"Number of edges different than declared!" << endl;
     else if(numNodes == 0)
         numNodes = counter;
 
     if(maxNode >= numNodes)
-        std::cout<<"Declared less nodes than the maximal ID found!"<< std::endl;
+        cout<<"Declared less nodes than the maximal ID found!"<< endl;
     if(numNodes == 0)
         numNodes = maxNode;
 
     output.clear();
-    output.seekp(0, std::ios::beg);
+    output.seekp(0, ios::beg);
     for(auto i : {directed, numNodes, numEdges})
         output.write((char*) &i, sizeof(i));  //write metadata at the beginning of the file
 
@@ -53,8 +53,69 @@ void convertToBinary(std::string filename, std::string outfilename){
     input.close();
 }
 
-vector< vector<uint32_t> > readBinaryGraph(string filename, uint32_t &numEdges, uint32_t &numNodes)
-{
+vector< vector<uint32_t> > readGraph(string filename, uint32_t &numEdges, uint32_t &numNodes){
+    ifstream input(filename);
+
+    string word;
+    numEdges = 0, numNodes = 0;
+    uint32_t directed =1;
+    while(input.peek() == '#'){ // comments section
+        string line; getline(input, line);
+        istringstream ss(line);
+        while(ss>>word){
+            if(word.find("Edges") != string::npos)
+                ss >> numEdges;
+            else if(word.find("Vertices") != string::npos ||
+                    word.find("Nodes") != string::npos)
+                ss >> numNodes;
+            else if(word.find("Undirected") != string::npos)
+                directed = 0;
+        }
+    }
+
+    auto pos = input.tellg();    // remember where the header comments finish
+    cout<<"Found: Nodes="<<numNodes<<" Edges="<<numEdges<< endl;
+
+    if(!numEdges)
+        cout<<"Couldn't find out how many edges are there!" << endl;
+
+
+    uint32_t from, to, counter = 0, maxNode = 0;
+    while(input >> from >> to){
+        counter++;
+        if(from > maxNode) maxNode = from;
+        if(to > maxNode) maxNode = to;
+    }
+
+    if(numEdges != 0 && numEdges != counter)
+        cout<<"Number of edges different than declared!" << endl;
+    else if(numNodes == 0)
+        numNodes = counter;
+
+    if(maxNode >= numNodes){
+        cout<<"Declared less nodes than the maximal ID found!"<< endl;
+        numNodes = maxNode;
+    }
+    if(numNodes == 0)
+        numNodes = maxNode;
+
+    // figured out how big the neighbours must be, now populate:
+    vector< vector<uint32_t> > neighbours(numNodes);
+    cout<<"Allocated "<< neighbours.size() << " adjacency lists."<<endl;
+    input.clear();
+    input.seekg(pos, ios::beg);
+
+    while(input >> from >> to){
+        // cout<<"pushing edge: "<<from << " " << to << endl; 
+        neighbours[from].push_back(to);
+    	if(!directed)	neighbours[to].push_back(from);
+    }
+
+    input.close();
+    return neighbours;
+}
+
+vector< vector<uint32_t> > readBinaryGraph(string filename, uint32_t &numEdges, uint32_t &numNodes){
 	ifstream fp;
 	fp.open(filename, ios::in | ios::binary);
 
@@ -85,8 +146,8 @@ vector< vector<uint32_t> > readBinaryGraph(string filename, uint32_t &numEdges, 
 }
 
 
-vector< vector<uint32_t> > readGraph(string filename, uint32_t &numEdges, uint32_t &numNodes)
-{
+
+vector< vector<uint32_t> > readRawGraph(string filename, uint32_t &numEdges, uint32_t &numNodes){
 	ifstream fp;
 	fp.open(filename, ios::in);
 

@@ -13,4 +13,6 @@ uint64_t sspBitset(const std::vector< std::vector<uint32_t> > &neighbours, uint3
 
 uint64_t sspBFS(const std::vector< std::vector<uint32_t> > &neighbours, uint32_t numEdges);
 
+// sum of the shortest paths from one vertex
+uint64_t vertexBFS(const std::vector< std::vector<uint32_t> > &neighbours, uint32_t v, uint32_t numNodes);
 #endif

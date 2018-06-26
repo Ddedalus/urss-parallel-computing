@@ -11,22 +11,20 @@ using namespace std;
 
 int main(int argc, char* argv[]){
 
-    tests();
+    // tests();
 
-    string sample("../data/sample.graph.txt");
-    string binary("../output/sample.bin");
-    convertToBinary(sample, binary);
+    string fb("../data/web-Google.txt");
 
     uint32_t n, e;
-    auto neighbours = readBinaryGraph(binary, n ,e);
-    for(auto  n : neighbours[2])
-        cout << n << " ";
-    cout<< "\n Read, Nodes=" << n << " Edges=" << e << endl;
+    vector< vector<uint32_t> > neighbours = readGraph(fb, n, e);
 
-    // string path = "/home/hubert/Code/Warwick/BSP/external/asp/Networks/n5.edges";
-	// readGraph(path);
-	// cout<< serialASP()<<endl;
-	// return 0;
+    uint64_t size = 0;
+    for(auto n : neighbours){
+        size += n.size() * sizeof(uint32_t);
+    }
+    cout<< "Loaded large graph. Size of adj. list is: " << size << endl;
+    cout << sspBFS(neighbours, e) << endl;
+
 }
 
 // int main(int argc, char**argv)
