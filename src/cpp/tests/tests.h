@@ -5,12 +5,15 @@
 #include <string>
 #include <stdint.h>
 #include <fstream>
+#include "../Bitset.h"
 
 void bitset_test();
 
-void bitst_rough();
+void bitset_rough();
 
 void graph_io_test();
 
-void all_tests();
+void tests();
+
+
 #endif

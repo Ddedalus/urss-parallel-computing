@@ -72,3 +72,7 @@ src/Calling C/main
 external/SNAP/
 
 src/cpp/build/
+
+src/cpp/\.vscode/
+
+src/cpp/output/

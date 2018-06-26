@@ -1,6 +1,6 @@
 #include "Bitset.h"
 #include "graphIO.h"
-#include "tests/tests.h"
+#include "tests.h"
 #include "algorithms.h"
 
 #include <iostream>
@@ -11,16 +11,17 @@ using namespace std;
 
 int main(int argc, char* argv[]){
 
-    // all_tests();
-    string sample("./data/sample.graph.txt");
-    string binary("./output/sample.bin");
+    tests();
+
+    string sample("../data/sample.graph.txt");
+    string binary("../output/sample.bin");
     convertToBinary(sample, binary);
 
     uint32_t n, e;
     auto neighbours = readBinaryGraph(binary, n ,e);
     for(auto  n : neighbours[2])
         cout << n << " ";
-    cout<< endl;
+    cout<< "\n Read, Nodes=" << n << " Edges=" << e << endl;
 
     // string path = "/home/hubert/Code/Warwick/BSP/external/asp/Networks/n5.edges";
 	// readGraph(path);

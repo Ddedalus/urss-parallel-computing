@@ -1,12 +1,13 @@
-#include "tests/tests.h"
+#include "tests.h"
 
 using namespace std;
 
-void all_tests(){
-    std::cout << "   ---   Testing   ---   \n" << std::endl;
-    bitset_test();
-    std::cout << " --- Finished Testing --- \n" << std::endl;
-}
+// void all_tests(){
+//     std::cout << "   ---   Testing   ---   \n" << std::endl;
+//     bitset_test();
+//     graphIO_test();
+//     std::cout << " --- Finished Testing --- \n" << std::endl;
+// }
 
 void bitset_test(){
     cout << "    --   Bitset  --  " << endl;
