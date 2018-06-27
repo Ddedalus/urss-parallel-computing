@@ -19,9 +19,7 @@ int main(int argc, char* argv[]){
     uint32_t n, e;
     vector< vector<uint32_t> > neighbours = readGraph(g, n, e);
 
-    // cout << "Bitset:" << sspBitset(neighbours, e) << endl;
-    // cout << "BFS:" << sspBFS(neighbours, e) << endl;
-    cout << "Parallel Bitset:" << sspParaBitset(neighbours, e) << endl;
+    cout << "Bitset:" << sspBitset(neighbours, e) << endl;
 
     return 0;
 }
