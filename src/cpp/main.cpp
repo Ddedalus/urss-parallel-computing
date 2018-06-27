@@ -13,18 +13,20 @@ int main(int argc, char* argv[]){
 
     // tests();
 
-    string fb("../data/web-Google.txt");
+    // string fb("../data/web-cleaned.txt");
+    string g("../data/g20.edges");
 
     uint32_t n, e;
-    vector< vector<uint32_t> > neighbours = readGraph(fb, n, e);
+    vector< vector<uint32_t> > neighbours = readGraph(g, n, e);
 
     uint64_t size = 0;
     for(auto n : neighbours){
         size += n.size() * sizeof(uint32_t);
     }
     cout<< "Loaded large graph. Size of adj. list is: " << size << endl;
-    cout << sspBFS(neighbours, e) << endl;
+    cout << "bitsetSSP:" << sspBitset(neighbours, e) << endl;
 
+    return 0;
 }
 
 // int main(int argc, char**argv)

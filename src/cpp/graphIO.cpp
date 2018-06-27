@@ -53,12 +53,14 @@ void convertToBinary(string filename, string outfilename){
     input.close();
 }
 
-vector< vector<uint32_t> > readGraph(string filename, uint32_t &numEdges, uint32_t &numNodes){
+vector< vector<uint32_t> > readGraph(string filename, uint32_t &numEdges, uint32_t &numNodes, bool directed){
     ifstream input(filename);
-
+    if(!input){
+        cout<<"Error opening " << filename << endl;
+        exit(EXIT_FAILURE);
+    }
     string word;
     numEdges = 0, numNodes = 0;
-    uint32_t directed =1;
     while(input.peek() == '#'){ // comments section
         string line; getline(input, line);
         istringstream ss(line);
@@ -101,7 +103,6 @@ vector< vector<uint32_t> > readGraph(string filename, uint32_t &numEdges, uint32
 
     // figured out how big the neighbours must be, now populate:
     vector< vector<uint32_t> > neighbours(numNodes);
-    cout<<"Allocated "<< neighbours.size() << " adjacency lists."<<endl;
     input.clear();
     input.seekg(pos, ios::beg);
 
@@ -110,7 +111,9 @@ vector< vector<uint32_t> > readGraph(string filename, uint32_t &numEdges, uint32
         neighbours[from].push_back(to);
     	if(!directed)	neighbours[to].push_back(from);
     }
-
+    cout<<"Loaded graph. Nodes: "<<neighbours.size()
+                <<" Edges: " << numEdges
+                <<" Directed: " << (directed ? "true" : "false") << endl;
     input.close();
     return neighbours;
 }

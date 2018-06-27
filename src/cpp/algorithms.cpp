@@ -7,9 +7,8 @@ struct qNode{
 	uint32_t distance;
 };
 
-// sum of the shortest paths from one vertex
 uint64_t vertexBFS(const vector< vector<uint32_t> > &neighbours, uint32_t v, uint32_t numNodes){
-	uint32_t sum = 0;
+	uint64_t sum = 0, count = 1;
 	vector<bool> visited(numNodes, false);
 	deque<qNode> q;	// greater memory flexibility
 	q.push_back({v, 0}); visited[v] = true;
@@ -20,9 +19,12 @@ uint64_t vertexBFS(const vector< vector<uint32_t> > &neighbours, uint32_t v, uin
 				q.push_back({n, current.distance + 1});
 				sum += current.distance + 1;
 				visited[n] = true;
+        count++;
 			}
 		}
-	}	
+	}
+  if(count < numNodes)
+    cout<<"Haven't reached " << numNodes - count << " nodes" << endl;
 	return sum;
 }
 
@@ -35,8 +37,6 @@ uint64_t sspBFS(const vector< vector<uint32_t> > &neighbours, uint32_t numEdges)
 	return sum;
 
 }
-
-
 
 uint64_t sspBitset(const vector< vector<uint32_t> > &neighbours, uint32_t numEdges)
 {
@@ -72,11 +72,14 @@ uint64_t sspBitset(const vector< vector<uint32_t> > &neighbours, uint32_t numEdg
     done = true;
     for (int i = 0; i < numNodes; i++) {
       reaching[i].copy_from(reachingNext[i]);
-      if(! reaching[i].is_full())
+      if(! reaching[i].is_full()){
         done = false;
+        // cout<<"Node "<< i <<" not full, size: "<< reaching[i].count()<<endl;
+      }
     }
     
     dist++;
+    cout<<"Distance is now: "<<dist<<endl;
   }
 
   return sum;
