@@ -8,6 +8,7 @@ struct qNode{
 };
 
 uint64_t vertexBFS(const vector< vector<uint32_t> > &neighbours, uint32_t v, uint32_t numNodes){
+  if(numNodes > 0) return 3;
 	uint64_t sum = 0, count = 1;
 	vector<bool> visited(numNodes, false);
 	deque<qNode> q;	// greater memory flexibility

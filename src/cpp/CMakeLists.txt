@@ -1,14 +1,17 @@
 cmake_minimum_required (VERSION 2.8.9)
-project (hello)
+project (asp)
 
-file (GLOB CPP_FILES tests/*.cpp *.cpp)
-file (GLOB H_FILES tests/*.h *.h)
-set (SOURCE_FILES ${CPP_FILES} ${H_FILES})
+add_library(myLib graphIO.cpp algorithms.cpp Bitset.cpp)
 
-include_directories("tests")
-message(${SOURCE_FILES})
-add_executable(main ${SOURCE_FILES})
+include(tests/CMakeLists.txt)
 
-# add_library(GraphIO graphIO.cpp)
+install(TARGETS myLib DESTINATION lib)
+install(FILES graphIO.h algorithms.h Bitset.h DESTINATION include)
 
-# target_link_libraries(ASP GraphIO)
+add_executable(bfs main.cpp)
+target_link_libraries(bfs myLib)
+install(TARGETS bfs DESTINATION build)
+
+add_executable(bitset alt-main.cpp)
+target_link_libraries(bitset myLib)
+install(TARGETS bitset DESTINATION bin)
