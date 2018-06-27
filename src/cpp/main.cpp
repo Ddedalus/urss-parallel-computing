@@ -1,6 +1,6 @@
 #include "Bitset.h"
 #include "graphIO.h"
-#include "tests.h"
+// #include "tests.h"
 #include "algorithms.h"
 
 #include <iostream>

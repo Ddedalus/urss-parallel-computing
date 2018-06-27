@@ -12,7 +12,7 @@ uint64_t vertexBFS(const vector< vector<uint32_t> > &neighbours, uint32_t v, uin
 	vector<bool> visited(numNodes, false);
 	deque<qNode> q;	// greater memory flexibility
 	q.push_back({v, 0}); visited[v] = true;
-	while(!q.empty()){
+	while(!q.empty() && count < numNodes){
 		qNode current = q.front(); q.pop_front();
 		for(uint32_t n : neighbours[current.node]){
 			if(! visited[n]){
