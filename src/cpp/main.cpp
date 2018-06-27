@@ -1,6 +1,6 @@
 #include "Bitset.h"
 #include "graphIO.h"
-// #include "tests.h"
+#include "tests/tests.h"
 #include "algorithms.h"
 
 #include <iostream>
@@ -19,7 +19,8 @@ int main(int argc, char* argv[]){
     uint32_t n, e;
     vector< vector<uint32_t> > neighbours = readGraph(g, n, e);
 
-    cout << "bitsetSSP:" << sspBitset(neighbours, e) << endl;
+    // cout << "Bitset:" << sspBitset(neighbours, e) << endl;
+    // cout << "BFS:" << sspBFS(neighbours, e) << endl;
 
     return 0;
 }

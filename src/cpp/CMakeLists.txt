@@ -1,14 +1,22 @@
 cmake_minimum_required (VERSION 2.8.9)
-project (hello)
+project (asp)
 
-file (GLOB CPP_FILES tests/*.cpp *.cpp)
-file (GLOB H_FILES tests/*.h *.h)
-set (SOURCE_FILES ${CPP_FILES} ${H_FILES})
+add_definitions("-fopenmp")
 
-include_directories("tests")
-message(${SOURCE_FILES})
-add_executable(main ${SOURCE_FILES})
 
-# add_library(GraphIO graphIO.cpp)
+add_library(myLib graphIO.cpp algorithms.cpp Bitset.cpp)
 
-# target_link_libraries(ASP GraphIO)
+include(tests/CMakeLists.txt)
+
+install(TARGETS myLib DESTINATION lib)
+install(FILES graphIO.h algorithms.h Bitset.h DESTINATION include)
+
+add_executable(main main.cpp)
+target_link_libraries(main myLib)
+install(TARGETS main DESTINATION build)
+
+# build additional binary from alternative version of the main file
+# add_executable(bitset alt-main.cpp)
+# target_link_libraries(bitset myLib)
+# target_compile_options(bitset "-O2")
+# install(TARGETS bitset DESTINATION bin)
