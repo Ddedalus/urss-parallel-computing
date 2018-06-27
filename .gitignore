@@ -60,3 +60,24 @@ src/TSP/qsopt/
 src/TSP/instances/
 
 src/TSP/concorde/
+src/Calling C/bfs
+src/Calling C/*.out
+src/Calling C/.vscode/settings.json
+
+src/Calling C/\.vscode/
+src/Calling C/casp
+src/Calling C/caspc
+src/Calling C/main
+
+external/SNAP/
+
+src/cpp/build/
+
+src/cpp/\.vscode/
+
+src/cpp/output/
+.RDataTmp
+
+\.RDataTmp1
+
+src/cpp/release/
