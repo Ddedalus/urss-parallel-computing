@@ -14,16 +14,11 @@ int main(int argc, char* argv[]){
     // tests();
 
     // string fb("../data/web-cleaned.txt");
-    string g("../data/g20.edges");
+    string g("../data/g80.edges");  // remember to run from release build to get optimal performance
 
     uint32_t n, e;
     vector< vector<uint32_t> > neighbours = readGraph(g, n, e);
 
-    uint64_t size = 0;
-    for(auto n : neighbours){
-        size += n.size() * sizeof(uint32_t);
-    }
-    cout<< "Loaded large graph. Size of adj. list is: " << size << endl;
     cout << "bitsetSSP:" << sspBitset(neighbours, e) << endl;
 
     return 0;

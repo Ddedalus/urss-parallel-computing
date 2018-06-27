@@ -21,10 +21,10 @@ void convertToBinary(string filename, string outfilename){
                 directed = 0;
         }
     }
-    cout<<"Found: Nodes="<<numNodes<<" Edges="<<numEdges<< endl;
+    cout<< "Read graph: "<<"Found: Nodes="<<numNodes<<" Edges="<<numEdges<< endl;
 
     if(!numEdges)
-        cout<<"Couldn't find out how many edges are there!" << endl;
+        cout<< "Read graph: "<<"Couldn't find out how many edges are there!" << endl;
 
     uint32_t from, to, counter = 0, maxNode = 0;
     while(input >> from >> to){
@@ -35,12 +35,12 @@ void convertToBinary(string filename, string outfilename){
             maxNode = from < to ? to : from;
     }
     if(numEdges != 0 && numEdges != counter)
-        cout<<"Number of edges different than declared!" << endl;
+        cout<< "Read graph: "<<"Number of edges different than declared!" << endl;
     else if(numNodes == 0)
         numNodes = counter;
 
     if(maxNode >= numNodes)
-        cout<<"Declared less nodes than the maximal ID found!"<< endl;
+        cout<< "Read graph: "<<"Declared less nodes than the maximal ID found!"<< endl;
     if(numNodes == 0)
         numNodes = maxNode;
 
@@ -56,7 +56,7 @@ void convertToBinary(string filename, string outfilename){
 vector< vector<uint32_t> > readGraph(string filename, uint32_t &numEdges, uint32_t &numNodes, bool directed){
     ifstream input(filename);
     if(!input){
-        cout<<"Error opening " << filename << endl;
+        cout<< "Read graph: "<<"Error opening " << filename << endl;
         exit(EXIT_FAILURE);
     }
     string word;
@@ -76,11 +76,9 @@ vector< vector<uint32_t> > readGraph(string filename, uint32_t &numEdges, uint32
     }
 
     auto pos = input.tellg();    // remember where the header comments finish
-    cout<<"Found: Nodes="<<numNodes<<" Edges="<<numEdges<< endl;
 
     if(!numEdges)
-        cout<<"Couldn't find out how many edges are there!" << endl;
-
+        cout<< "Read graph: "<<"Couldn't find out how many edges are there!" << endl;
 
     uint32_t from, to, counter = 0, maxNode = 0;
     while(input >> from >> to){
@@ -90,12 +88,12 @@ vector< vector<uint32_t> > readGraph(string filename, uint32_t &numEdges, uint32
     }
 
     if(numEdges != 0 && numEdges != counter)
-        cout<<"Number of edges different than declared!" << endl;
+        cout<< "Read graph: "<<"Number of edges different than declared!" << endl;
     else if(numNodes == 0)
         numNodes = counter;
 
     if(maxNode >= numNodes){
-        cout<<"Declared less nodes than the maximal ID found!"<< endl;
+        cout<< "Read graph: "<<"Declared less nodes than the maximal ID found!"<< endl;
         numNodes = maxNode;
     }
     if(numNodes == 0)
@@ -107,13 +105,13 @@ vector< vector<uint32_t> > readGraph(string filename, uint32_t &numEdges, uint32
     input.seekg(pos, ios::beg);
 
     while(input >> from >> to){
-        // cout<<"pushing edge: "<<from << " " << to << endl; 
+        // cout<< "Read graph: "<<"pushing edge: "<<from << " " << to << endl; 
         neighbours[from].push_back(to);
     	if(!directed)	neighbours[to].push_back(from);
     }
-    cout<<"Loaded graph. Nodes: "<<neighbours.size()
-                <<" Edges: " << numEdges
-                <<" Directed: " << (directed ? "true" : "false") << endl;
+    cout<< "Read graph: "<<"Finished. Nodes="<<neighbours.size()
+                <<" Edges=" << numEdges
+                <<" Directed=" << (directed ? "true" : "false") << endl;
     input.close();
     return neighbours;
 }
@@ -124,7 +122,7 @@ vector< vector<uint32_t> > readBinaryGraph(string filename, uint32_t &numEdges, 
 
 	// Read edge list from file
 	if (!fp) {
-		cout << "Can't open " << filename << endl;
+		cout<< "Read graph: " << "Can't open " << filename << endl;
 		exit(EXIT_FAILURE);
 	}
     uint32_t directed;
@@ -156,7 +154,7 @@ vector< vector<uint32_t> > readRawGraph(string filename, uint32_t &numEdges, uin
 
 	// Read edge list from file
 	if (!fp) {
-		cout << "Can't open " << filename << endl;
+		cout<< "Read graph: " << "Can't open " << filename << endl;
 		exit(EXIT_FAILURE);
 	}
 

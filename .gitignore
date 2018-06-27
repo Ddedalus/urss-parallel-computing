@@ -76,3 +76,8 @@ src/cpp/build/
 src/cpp/\.vscode/
 
 src/cpp/output/
+.RDataTmp
+
+\.RDataTmp1
+
+src/cpp/release/

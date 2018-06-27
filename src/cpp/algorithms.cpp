@@ -79,7 +79,6 @@ uint64_t sspBitset(const vector< vector<uint32_t> > &neighbours, uint32_t numEdg
     }
     
     dist++;
-    cout<<"Distance is now: "<<dist<<endl;
   }
 
   return sum;
