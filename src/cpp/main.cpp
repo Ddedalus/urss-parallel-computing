@@ -16,7 +16,6 @@ using Clock = std::chrono::steady_clock;
 using std::chrono::time_point;
 using std::chrono::duration_cast;
 using std::chrono::milliseconds;
-using namespace std::literals::chrono_literals;
 using std::this_thread::sleep_for;
 
 using namespace std;
@@ -41,11 +40,11 @@ int main(int argc, char* argv[]){
     // cout << "BFS:" << sspBFS(neighbours, e) << endl;
     time_point<Clock> start;
     start = Clock::now();
-    cout << "Parallel Bitset:" << sspParaBitset(neighbours, e) << endl;
+    cout << "Parallel Bitset:\n" << sspParaBitset(neighbours, e) << endl;
     double para = printDuration(start, "Parallel Bitset:");
 
     start = Clock::now();
-    cout << "Bitset:" << sspBitset(neighbours, e) << endl;
+    cout << "Bitset:\n" << sspBitset(neighbours, e) << endl;
     double normal = printDuration(start, "Bitset:");
     cout<<"Speedup factor: " << normal/para <<endl;
 
