@@ -4,6 +4,10 @@ project (asp)
 # release build:
 set(CMAKE_BUILD_TYPE "Release")
 
+# require C++11
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 set(CMAKE_CXX_FLAGS "-fopenmp")
 message("CMAKE_CXX_FLAGS is ${CMAKE_CXX_FLAGS}")
 
