@@ -21,7 +21,7 @@ int main(int argc, char* argv[]){
 
     // cout << "Bitset:" << sspBitset(neighbours, e) << endl;
     // cout << "BFS:" << sspBFS(neighbours, e) << endl;
-    cout << "Parallel Bitset:" << sspParaBitset(neighbours, e) << endl;
+    cout << "Parallel Bitset:" << sspBitset(neighbours, e) << endl;
 
     return 0;
 }
