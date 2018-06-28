@@ -86,51 +86,55 @@ uint64_t sspBitset(const vector< vector<uint32_t> > &neighbours, uint32_t numEdg
   return sum;
 }
 
-// uint64_t sspParaBitset(const vector< vector<uint32_t> > &neighbours, uint32_t numEdges)
-// {
-//   uint32_t numNodes = neighbours.size();
-//   // Sum of distances
-//   uint64_t sum = 0;
+uint64_t sspParaBitset(const vector< vector<uint32_t> > &neighbours, uint32_t numEdges)
+{
+  uint32_t numNodes = neighbours.size();
+  // Sum of distances
+  uint64_t sum = 0;
 
-//   // Initialise reaching vector for each node
-//   vector< Bitset > reaching(numNodes, Bitset(numNodes));
-//   vector< Bitset > reachingNext(numNodes, Bitset(numNodes));
-//   for (uint64_t i = 0; i < numNodes; i++) {
-//     reaching[i].set(i, true);
-//     reachingNext[i].set(i, true);
-//   }
+  // Initialise reaching vector for each node
+  vector< Bitset > reaching(numNodes, Bitset(numNodes));
+  vector< Bitset > reachingNext(numNodes, Bitset(numNodes));
+  for (uint64_t i = 0; i < numNodes; i++) {
+    reaching[i].set(i, true);
+    reachingNext[i].set(i, true);
+  }
 
-//   // Distance increases on each iteration
-//   uint32_t dist = 1;
-//   cout<<"Parallel with " << omp_get_num_procs() << "procs available\n";
+  // Distance increases on each iteration
+  uint32_t dist = 1;
+  cout<<"Parallel with " << omp_get_num_procs() << "procs available\n";
 
-//   bool done = false;
-//   while (! done) {
-//     // For each node
-//     #pragma omp parallel
-//     {
-//       #pragma omp for
-//       for (int i = 0; i < numNodes; i++) {
-//         for (auto n : neighbours[i]){
-//           reachingNext[i] += reaching[n];
-//         }
+  bool done = false;
+  while (! done) {
+    // For each node
+    #pragma omp parallel
+    {
+      uint64_t l_sum = 0;
+      #pragma omp for
+      for (int i = 0; i < numNodes; i++) {
+        for (auto n : neighbours[i]){
+          reachingNext[i] += reaching[n];
+        }
 
-//         // add the shortest paths found
-//         sum += dist * reachingNext[i].diff_size(reaching[i]);
-//       }
+        // add the shortest paths found
+        l_sum += dist * reachingNext[i].diff_size(reaching[i]);
+      }
 
-//       // For each node, update reaching vector
-//       done = true;
-//       #pragma omp for
-//       for (int i = 0; i < numNodes; i++) {
-//         reaching[i].copy_from(reachingNext[i]);
-//         if(! reaching[i].is_full()){
-//           done = false;
-//         }
-//       }
-//     }
-//       dist++;
-//   }
+      #pragma omp atomic
+      sum += l_sum;
+      
+      // For each node, update reaching vector
+      done = true;
+      #pragma omp for
+      for (int i = 0; i < numNodes; i++) {
+        reaching[i].copy_from(reachingNext[i]);
+        if(! reaching[i].is_full()){
+          done = false;
+        }
+      }
+    }
+      dist++;
+  }
 
-//   return sum;
-// }
+  return sum;
+}

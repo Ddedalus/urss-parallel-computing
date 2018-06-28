@@ -7,13 +7,31 @@
 #include <vector>
 #include <string>
 
+#include <chrono>
+#include <thread>
+
+// There are other clocks, but this is usually the one you want.
+// It corresponds to CLOCK_MONOTONIC at the syscall level.
+using Clock = std::chrono::steady_clock;
+using std::chrono::time_point;
+using std::chrono::duration_cast;
+using std::chrono::milliseconds;
+using namespace std::literals::chrono_literals;
+using std::this_thread::sleep_for;
+
 using namespace std;
+
+double printDuration(time_point<Clock> start, string message){
+    time_point<Clock> end = Clock::now();
+    milliseconds diff = duration_cast<milliseconds>(end - start);
+    double elapsed = diff.count()/1000.0;
+    std::cout << message+" " << elapsed << "s" << std::endl;
+    return elapsed;
+}
 
 int main(int argc, char* argv[]){
 
     // tests();
-
-    // string fb("../data/web-cleaned.txt");
     string g("../data/g20.edges");  // remember to run from release build to get optimal performance
 
     uint32_t n, e;
@@ -21,7 +39,15 @@ int main(int argc, char* argv[]){
 
     // cout << "Bitset:" << sspBitset(neighbours, e) << endl;
     // cout << "BFS:" << sspBFS(neighbours, e) << endl;
-    cout << "Parallel Bitset:" << sspBitset(neighbours, e) << endl;
+    time_point<Clock> start;
+    start = Clock::now();
+    cout << "Parallel Bitset:" << sspParaBitset(neighbours, e) << endl;
+    double para = printDuration(start, "Parallel Bitset:");
+
+    start = Clock::now();
+    cout << "Bitset:" << sspBitset(neighbours, e) << endl;
+    double normal = printDuration(start, "Bitset:");
+    cout<<"Speedup factor: " << normal/para <<endl;
 
     return 0;
 }
