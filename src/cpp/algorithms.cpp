@@ -110,18 +110,15 @@ uint64_t sspParaBitset(const vector< vector<uint32_t> > &neighbours, uint32_t nu
     #pragma omp parallel
     {
       uint64_t l_sum = 0;
-      #pragma omp for
+      #pragma omp for reduction(+ : sum)
       for (int i = 0; i < numNodes; i++) {
         for (auto n : neighbours[i]){
           reachingNext[i] += reaching[n];
         }
 
         // add the shortest paths found
-        l_sum += dist * reachingNext[i].diff_size(reaching[i]);
+        sum += dist * reachingNext[i].diff_size(reaching[i]);
       }
-
-      #pragma omp atomic
-      sum += l_sum;
       
       // For each node, update reaching vector
       done = true;
