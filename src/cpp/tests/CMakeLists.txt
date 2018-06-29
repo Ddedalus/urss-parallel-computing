@@ -1,10 +1,9 @@
-target_sources(myLib
-    PRIVATE
-        "${CMAKE_CURRENT_LIST_DIR}/tests.cpp"
-        "${CMAKE_CURRENT_LIST_DIR}/tBitset.cpp"
-        "${CMAKE_CURRENT_LIST_DIR}/tgraphIO.cpp"
-    PUBLIC
-        "${CMAKE_CURRENT_LIST_DIR}/tests.h"
-)
+target_link_libraries(testLib PUBLIC myLib)
 
-target_include_directories(myLib PUBLIC "${CMAKE_CURRENT_LIST_DIR}")
+file(GLOB TEST_SRC "${CMAKE_CURRENT_LIST_DIR}/*.cpp")
+
+# message("Found sources for testLib: ${TEST_SRC}")
+
+target_sources(testLib PRIVATE ${TEST_SRC})
+target_include_directories(testLib PUBLIC "${PROJECT_SOURCE_DIR}/include")
+

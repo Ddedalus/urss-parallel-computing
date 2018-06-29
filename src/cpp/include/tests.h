@@ -5,8 +5,8 @@
 #include <string>
 #include <stdint.h>
 #include <fstream>
-#include "../Bitset.h"
-#include "../graphIO.h"
+#include "Bitset.h"
+#include "graphIO.h"
 
 void bitset_test();
 
