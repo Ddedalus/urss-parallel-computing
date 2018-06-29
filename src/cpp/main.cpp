@@ -1,32 +1,16 @@
 #include "Bitset.h"
 #include "graphIO.h"
-#include "tests/tests.h"
 #include "algorithms.h"
+#include "Timer.h"
 
 #include <iostream>
 #include <vector>
 #include <string>
 
-#include <chrono>
-#include <thread>
 
-// There are other clocks, but this is usually the one you want.
-// It corresponds to CLOCK_MONOTONIC at the syscall level.
-using Clock = std::chrono::steady_clock;
-using std::chrono::time_point;
-using std::chrono::duration_cast;
-using std::chrono::milliseconds;
-using std::this_thread::sleep_for;
+// #include "tests.h"
 
 using namespace std;
-
-double printDuration(time_point<Clock> start, string message){
-    time_point<Clock> end = Clock::now();
-    milliseconds diff = duration_cast<milliseconds>(end - start);
-    double elapsed = diff.count()/1000.0;
-    std::cout << message+" " << elapsed << "s" << std::endl;
-    return elapsed;
-}
 
 int main(int argc, char* argv[]){
 
@@ -36,17 +20,13 @@ int main(int argc, char* argv[]){
     uint32_t n, e;
     vector< vector<uint32_t> > neighbours = readGraph(g, n, e);
 
-    // cout << "Bitset:" << sspBitset(neighbours, e) << endl;
-    // cout << "BFS:" << sspBFS(neighbours, e) << endl;
-    time_point<Clock> start;
-    start = Clock::now();
-    cout << "Parallel Bitset:\n" << sspParaBitset(neighbours, e) << endl;
-    double para = printDuration(start, "Parallel Bitset:");
+    Timer t("Parallel Bitset");
+    auto check = sspParaBitset(neighbours, e);
+    t.print();
 
-    start = Clock::now();
-    cout << "Bitset:\n" << sspBitset(neighbours, e) << endl;
-    double normal = printDuration(start, "Bitset:");
-    cout<<"Speedup factor: " << normal/para <<endl;
+    t.start("Bitset");
+    check = sspBitset(neighbours, e);
+    t.print();
 
     return 0;
 }
