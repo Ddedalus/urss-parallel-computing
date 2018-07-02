@@ -7,10 +7,10 @@
 #include <fstream>
 
 // timestamp handling
-#include <ctime>
 #include <iostream>
 #include <iomanip>
-#include <exception>
+#include <ctime>
+#include <sstream>
 
 class RowNameException: public std::exception{
   virtual const char* what() const throw()
@@ -22,21 +22,22 @@ class RowNameException: public std::exception{
 /**
  * @brief Stores results of a single algorithm run, prepared to write into .csv file.
  * Capable of storing a map of <key, value> pairs, will add a timestamp.
- * Note: column names and quantity may be specified only in a constructor call. Values may be arbitrarily updated, though.
+ * Values may be arbitrarily updated.
  */
 class RunRecord
 {
     /**
      * @brief Class printing this record into a file.
      */
-    friend class RecordWriter;  
+    friend class RecordWriter;
+    friend void run_record_test();
 private:
-    std::map<std::string, std::string> column; // map will write in an lexicographic order
+    std::map<std::string, std::string> columns; // map will write in an lexicographic order
 
     /**
      * @brief Get current time as string
      */
-    std::string getTimestamp();
+    static std::string getTimestamp();
 public:
     /**
      * @brief Construct a new Run Record object with specified column names initialised as empty strings.
@@ -60,21 +61,21 @@ public:
     /**
      * @brief Once a RecordWritter object is created, any existing column value may be updated.
      * 
-     * @param column Name of the column. If not found, a  RowNameException is thrown.
-     * @param value New value
-     * 
+     * @param column Name of the column. New column will be added if not yet in header
      * @return old value found in this column. Overwritten.
      */
-    std::string setRow(std::string column, std::string value);
+    std::string setValue(std::string column, std::string value);
     std::string getValue(std::string column);
 
     /**
-     * @brief Get values of all elements as a single, tab delimited string. Useful for printing.
+     * @brief Get values of all elements as a single, tab delimited string.
+     * Useful for printing, finishes with \n.
      */
     std::string toString();
 
     /**
-     * @brief Get names of all columns as a single, tab delimited string. Useful for printing. 
+     * @brief Get names of all columns as a single, tab delimited string.
+     * Useful for printing, finishes with \n. 
      */
     std::string getHeader();
 

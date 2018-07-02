@@ -24,10 +24,11 @@ target_compile_options(main PUBLIC "-O2")
 target_link_libraries(main myLib)
 install(TARGETS main DESTINATION build)
 
-# add_executable(bitset bitset.cpp)
-# target_link_libraries(bitset myLib)
+add_executable(tests main-tests.cpp)
+target_link_libraries(tests myLib)
+target_link_libraries(tests testLib)
 # target_compile_options(bitset PUBLIC "-O2")
-# install(TARGETS bitset DESTINATION build)
+install(TARGETS tests DESTINATION build)
 
 # build additional binary from alternative version of the main file
 # add_executable(bitset alt-main.cpp)
