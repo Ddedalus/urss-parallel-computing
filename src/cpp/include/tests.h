@@ -14,6 +14,10 @@ void bitset_rough();
 
 void graph_io_test();
 
+void run_record_test();
+
+void record_writer_test();
+
 void tests();
 
 
