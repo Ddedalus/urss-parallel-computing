@@ -8,5 +8,7 @@ using namespace std;
 
 int main(int argc, char* argv[]){
 
-    run_record_test();
+    // run_record_test();
+
+    record_writer_test();
 }

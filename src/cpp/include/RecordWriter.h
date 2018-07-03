@@ -3,19 +3,15 @@
 
 #include <string>
 #include <fstream>
+#include <sstream>
 #include <map>
 #include <exception>
+#include <algorithm>
+#include <iterator>
 
 #include <RunRecord.h>
 // #include <InstanceRecord.h>
 
-
-class FileIOException: public std::exception{
-  virtual const char* what() const throw()
-  {
-    return "Can't access counter/destination file anymore!";
-  }
-};
 /**
  * @brief Use this class to write *Record objects into a .csv file. Every object is written as a single row.
  * This class tires to enforce file integrity by checking the file content (header row) before appending a new record.
@@ -27,6 +23,7 @@ class FileIOException: public std::exception{
  */
 class RecordWriter
 {
+    friend void record_writer_test();
 public:
     static std::string run_counter_path;
     static std::string instance_counter_path;
@@ -44,12 +41,13 @@ private:
      * 
      * @return int 32-bit unsigned counter
      */
-    int getNextID(); // counter file is selected on object creation
-    bool checkFiles();  // throws FileIO exception if file access failed
+    int getNextID(RunRecord run); // counter file is selected on object creation
+    // int getNextID(InstanceRecord inst);
+    void checkFiles();  // throws an exception if file access failed
     bool checkRecordCorrect(RunRecord run);  //if the file has a header, it must match with any new record
     // bool checkRecordCorrect(InstanceRecord run);
-    std::vector<std::string> getFileHeader();   //returns empty vector if no valid header is found
 public:
+    std::vector<std::string> getFileHeader();   //returns empty vector if no valid header is found
     /**
      * @brief Construct a new Record Writer object. Appends the specified file.
      * TODO: implement run as enum type.
@@ -71,9 +69,9 @@ public:
     //TODO: std::string getString(InstanceRecord instance);
 
     /**
-     * @brief Peek what is the current header string.
+     * @brief Peek what would be a header for this Record.
      */
-    std::string getHeader();
+    std::string getHeader(RunRecord run);
 
     /**
      * @brief Append a single record to the file.
