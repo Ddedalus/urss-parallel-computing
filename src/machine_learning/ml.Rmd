@@ -1,0 +1,68 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+### Preprocessing files:
+Count number of occurences:  
+`grep -o "/.autofs/csother/ubccsresearcharrow-raid1/projects/TSP_Data/INSTANCE/PORTGEN/rand/" PORTGEN-feat.csv | wc -l`  
+Number of lines:  
+`wc -l file`  
+Replace all occurences:  
+`sed -i -e 's$portgen$$g' feat-short.csv`  
+Saving into new file:  
+`sed -e ... old.csv > new.csv`  
+And a more fancy replacement:  
+`sed -i -e 's$portgen\-[[:digit:]]\+\-$$g' feat-short.csv`  
+
+### Import instance features:
+```{r include=FALSE}
+library(here)
+feat <- read.csv2(here("src", "machine_learning", "feat-short.csv"), header = TRUE, sep = ",", dec = ".")
+summary(feat)
+feat$num_nodes %<>% as.integer
+feat$area <- NULL # const value
+norm.feat <- feat %>% scale %>% as.data.frame
+```
+
+```{r}
+times <- read.csv2(here("src", "machine_learning", "PORTGEN-concorde.csv"), sep=",", dec = ".")
+```
+
+### Glimpse at the feature data:
+```{r fig.height=30, fig.width=16}
+library(ggplot2)
+# feat %>% gather() %>% ggplot(aes(value)) + geom_histogram() + facet_wrap(~key, scales="free", ncol = 5)
+```
+
+Remove unnecessary variables and merge answers:
+```{r}
+# feat$mst_length <- feat$mst_length_skew <- feat$ls_bestsol_skew <- NULL
+# feat$cluster_distance_skew <- feat$bc_improv_per_cut_skew <- NULL
+total <- merge(feat, times, by=c("num_nodes", "num_edges"))
+t <- total$runtime # preserve order from the merge
+total %<>% scale %>% as.data.frame
+# log of runtime is more appropriate predictor than it's normalized
+total$runtime <- log10(t)
+```
+
+### Prediction time!
+```{r}
+# attach(total)
+library(randomForest)
+fit <- randomForest(runtime ~ .,
+                      data=total,
+                      importance=TRUE,
+                      ntree=100)
+```
+
+```{r}
+# library(ggRandomForests)
+total$predicted <- fit$predicted
+total %>% ggplot(aes(x=runtime, y=predicted)) + geom_point(alpha=0.2)
+```
+```{r}
+# fit$rsq %>% plot
+varImpPlot(fit, n.var = 20)
+```
+
