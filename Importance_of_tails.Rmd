@@ -1,0 +1,43 @@
+---
+title: "How improtant the tails are?"
+output: html_notebook
+---
+```{r}
+library(here)
+library(igraph)
+library(ggplot2)
+```
+
+```{r}
+n5 <- readPOETSGraph(here("external", "asp", "Networks", "n5.edges"))
+```
+
+```{r}
+getTail <- function(g, v) {
+  if(degree(g, v) > 1){
+    message("Not a tail node")
+    return(list(v));
+  }
+  
+  last <- neighbours(g, v)[[1]];
+  message("Beginning a tail" %>% paste(v, last))
+  t <- list(v, last);
+  while(degree(last) == 2){  # recently added still forms a tail
+    n <- neighbours(g, last);
+    last <- if(n[[1]] != last) n[[1]] else n[[2]] # the other neighbour 
+    t <- c(t, last)
+  }
+  # last element is the source and belongs to G'
+  t
+}
+```
+
+```{r}
+degree(n5) %>% table
+for(i in 1:1000){
+  t <- getTail(n5, i)
+  if(length(t) > 1)
+    t
+}
+```
+Conclusion: importance is 0. 
