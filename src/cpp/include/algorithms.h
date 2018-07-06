@@ -48,11 +48,11 @@ uint64_t sspBFS(const std::vector< std::vector<uint32_t> > &neighbours, uint32_t
  * Undefined if graph is not connected.
  * 
  * @param neighbours adjacency list representation of a directed, unweighted graph.
- * @param v the source node
+ * @param s the source node
  * @param numNodes in neighbours
  * @return uint64_t sum of lengths of shortest paths from v to each other node in the graph 
  */
-uint64_t vertexBFS(const std::vector< std::vector<uint32_t> > &neighbours, uint32_t v, uint32_t numNodes);
+uint64_t vertexBFS(const std::vector< std::vector<uint32_t> > &neighbours, uint32_t s, uint32_t numNodes);
 
 uint64_t sspParaBitset(const std::vector< std::vector<uint32_t> > &neighbours, uint32_t numEdges);
 

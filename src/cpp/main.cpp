@@ -2,6 +2,7 @@
 #include "graphIO.h"
 #include "algorithms.h"
 #include "Timer.h"
+#include "partitioning.h"
 
 #include <iostream>
 #include <vector>
@@ -14,19 +15,27 @@ using namespace std;
 
 int main(int argc, char* argv[]){
 
-    // tests();
+    // // tests();
     string g("../data/g20.edges");  // remember to run from release build to get optimal performance
 
     uint32_t n, e;
-    vector< vector<uint32_t> > neighbours = readGraph(g, n, e);
+    vector< vector<uint32_t> > neighbours = readGraph(g, e, n);
+    cout<<"Finding split set: " << endl;
+    auto splitSize = n;
+    for(auto v = 0; v < n-10; v++){
+        vector<bool> visited(n, false);
+        auto splitLevel = findSplitLevel(neighbours, v, visited);
+        splitSize = splitSize > splitLevel.size() ? splitLevel.size() : splitSize;
+    }
+    cout<<"Minimal size of the split level found: " << splitSize << endl; 
 
-    Timer t("Parallel Bitset");
-    auto check = sspParaBitset(neighbours, e);
-    t.print();
+    // Timer t("Parallel Bitset");
+    // auto check = sspParaBitset(neighbours, e);
+    // t.print();
 
-    t.start("Bitset");
-    check = sspBitset(neighbours, e);
-    t.print();
+    // t.start("Bitset");
+    // check = sspBitset(neighbours, e);
+    // t.print();
 
     return 0;
 }
