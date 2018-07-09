@@ -38,7 +38,7 @@ uint64_t sspBitset(const graph &neighbours, uint32_t numEdges);
  * @param numEdges total no. edges in neighbours
  * @return uint64_t sum of lengths of shortest paths between every pair of vertices
  */
-uint64_t sspBFS(graph &neighbours, uint32_t numEdges);
+uint64_t sspBFS(const graph &neighbours, uint32_t numEdges);
 
 /**
  * @brief SSP for a given source node, computed by a queue based BFS.
@@ -50,7 +50,7 @@ uint64_t sspBFS(graph &neighbours, uint32_t numEdges);
  * @param numNodes in neighbours
  * @return uint64_t sum of lengths of shortest paths from v to each other node in the graph 
  */
-uint64_t vertexBFS(const graph &neighbours, uint32_t s, uint32_t numNodes);
+uint64_t vertexBFS(const graph &neighbours, uint32_t s);
 
 uint64_t sspParaBitset(const graph &neighbours, uint32_t numEdges);
 

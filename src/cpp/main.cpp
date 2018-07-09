@@ -9,11 +9,16 @@ using namespace std;
 
 int main(int argc, char* argv[]){
 
-    string g("../data/g20.edges");  // remember to run from release build to get optimal performance
+    string path("../data/g20.edges");  // remember to run from release build to get optimal performance
 
     uint32_t e;
-    graph neighbours = readGraph(g, e);
-
+    graph g = readGraph(path, e);
+    Timer t("Bitset");
+    sspBitset(g, e);
+    cout << t.getElapsed() << endl;
+    t.start("BFS");
+    sspBFS(g, e);
+    cout << t.getElapsed();
 
     return 0;
 }

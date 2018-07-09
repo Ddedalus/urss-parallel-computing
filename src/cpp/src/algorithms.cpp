@@ -7,15 +7,14 @@ struct qNode{
 	uint32_t distance;
 };
 
-uint64_t vertexBFS(const graph &neighbours, uint32_t v, uint32_t numNodes){
-  if(numNodes > 0) return 3;
+uint64_t vertexBFS(const graph &g, uint32_t v){
 	uint64_t sum = 0, count = 1;
-	vector<bool> visited(numNodes, false);
+	vector<bool> visited(g.size(), false);
 	deque<qNode> q;	// greater memory flexibility
 	q.push_back({v, 0}); visited[v] = true;
-	while(!q.empty() && count < numNodes){
+	while(!q.empty() && count < g.size()){
 		qNode current = q.front(); q.pop_front();
-		for(uint32_t n : neighbours.at(current.node)){
+		for(node n : g.at(current.node)){
 			if(! visited[n]){
 				q.push_back({n, current.distance + 1});
 				sum += current.distance + 1;
@@ -24,31 +23,29 @@ uint64_t vertexBFS(const graph &neighbours, uint32_t v, uint32_t numNodes){
 			}
 		}
 	}
-  if(count < numNodes)
-    cout<<"Haven't reached " << numNodes - count << " nodes" << endl;
+  if(count < g.size())
+    cout<<"Haven't reached " << g.size() - count << " nodes" << endl;
 	return sum;
 }
 
-uint64_t sspBFS(const graph &neighbours, uint32_t numEdges){
-      uint32_t numNodes = neighbours.size();
+uint64_t sspBFS(const graph &g, uint32_t numEdges){
 	uint64_t sum = 0;
-	for(uint32_t v = 0; v < numNodes; v++){
-	    sum += vertexBFS(neighbours, v, numNodes);
+	for(auto iter = g.begin(); iter != g.end(); iter++){
+	    sum += vertexBFS(g, iter->first);
 	}
 	return sum;
 
 }
 
-uint64_t sspBitset(const graph &neighbours, uint32_t numEdges)
+uint64_t sspBitset(const graph &g, uint32_t numEdges)
 {
-  uint32_t numNodes = neighbours.size();
   // Sum of distances
   uint64_t sum = 0;
 
   // Initialise reaching vector for each node
-  vector< Bitset > reaching(numNodes, Bitset(numNodes));
-  vector< Bitset > reachingNext(numNodes, Bitset(numNodes));
-  for (uint64_t i = 0; i < numNodes; i++) {
+  vector< Bitset > reaching(g.size(), Bitset(g.size()));
+  vector< Bitset > reachingNext(g.size(), Bitset(g.size()));
+  for (uint64_t i = 0; i < g.size(); i++) {
     reaching[i].set(i, true);
     reachingNext[i].set(i, true);
   }
@@ -59,9 +56,9 @@ uint64_t sspBitset(const graph &neighbours, uint32_t numEdges)
   bool done = false;
   while (! done) {
     // For each node
-    for (int i = 0; i < numNodes; i++) {
+    for (int i = 0; i < g.size(); i++) {
       // For each neighbour
-      for (auto n : neighbours.at(i)){
+      for (auto n : g.at(i)){
         reachingNext[i] += reaching[n];
       }
 
@@ -71,7 +68,7 @@ uint64_t sspBitset(const graph &neighbours, uint32_t numEdges)
 
     // For each node, update reaching vector
     done = true;
-    for (int i = 0; i < numNodes; i++) {
+    for (int i = 0; i < g.size(); i++) {
       reaching[i].copy_from(reachingNext[i]);
       if(! reaching[i].is_full()){
         done = false;
@@ -85,16 +82,15 @@ uint64_t sspBitset(const graph &neighbours, uint32_t numEdges)
   return sum;
 }
 
-uint64_t sspParaBitset(const graph &neighbours, uint32_t numEdges)
+uint64_t sspParaBitset(const graph &g, uint32_t numEdges)
 {
-  uint32_t numNodes = neighbours.size();
   // Sum of distances
   uint64_t sum = 0;
 
   // Initialise reaching vector for each node
-  vector< Bitset > reaching(numNodes, Bitset(numNodes));
-  vector< Bitset > reachingNext(numNodes, Bitset(numNodes));
-  for (uint64_t i = 0; i < numNodes; i++) {
+  vector< Bitset > reaching(g.size(), Bitset(g.size()));
+  vector< Bitset > reachingNext(g.size(), Bitset(g.size()));
+  for (uint64_t i = 0; i < g.size(); i++) {
     reaching[i].set(i, true);
     reachingNext[i].set(i, true);
   }
@@ -110,8 +106,8 @@ uint64_t sspParaBitset(const graph &neighbours, uint32_t numEdges)
     {
       uint64_t l_sum = 0;
       #pragma omp for reduction(+ : sum)
-      for (int i = 0; i < numNodes; i++) {
-        for (auto n : neighbours.at(i)){
+      for (int i = 0; i < g.size(); i++) {
+        for (auto n : g.at(i)){
           reachingNext[i] += reaching[n];
         }
 
@@ -122,7 +118,7 @@ uint64_t sspParaBitset(const graph &neighbours, uint32_t numEdges)
       // For each node, update reaching vector
       done = true;
       #pragma omp for
-      for (int i = 0; i < numNodes; i++) {
+      for (int i = 0; i < g.size(); i++) {
         reaching[i].copy_from(reachingNext[i]);
         if(! reaching[i].is_full()){
           done = false;
