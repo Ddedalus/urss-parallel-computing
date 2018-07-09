@@ -1,7 +1,8 @@
 #ifndef __RECORDWRITER_H__
 #define __RECORDWRITER_H__
 
-#include <string>
+#include "public.h"
+
 #include <fstream>
 #include <sstream>
 #include <map>
@@ -27,6 +28,10 @@ class RecordWriter
 public:
     static std::string run_counter_path;
     static std::string instance_counter_path;
+    /**
+     * @brief Value written to the file in case empty string occurs in the input Record may be specified here.
+     * This setting affects all instances of RecordWritter.
+     */
     static std::string na;
 
 private:
@@ -81,14 +86,6 @@ public:
     void write(RunRecord run);
 
 };
-
-std::string RecordWriter::run_counter_path = "output/couter.txt";
-std::string RecordWriter::instance_counter_path = "data/couter.txt";
-/**
- * @brief Value written to the file in case empty string occurs in the input Record may be specified here.
- * This setting affects all instances of RecordWritter.
- */
-std::string RecordWriter::na= "";
 
 
 #endif

@@ -1,9 +1,4 @@
 #include "tests.h"
-#include "RunRecord.h"
-#include "RecordWriter.h"
-#include <map>
-#include <fstream>
-#include <stdio.h>
 
 using namespace std;
 void run_record_test(){

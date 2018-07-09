@@ -101,3 +101,7 @@ void RecordWriter::write(RunRecord run){
         }       
     }
 }
+
+std::string RecordWriter::run_counter_path = "output/couter.txt";
+std::string RecordWriter::instance_counter_path = "data/couter.txt";
+std::string RecordWriter::na= "";
