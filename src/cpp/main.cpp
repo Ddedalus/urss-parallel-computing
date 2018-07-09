@@ -1,4 +1,5 @@
 #include "public.h"
+
 #include "Bitset.h"
 #include "graphIO.h"
 #include "algorithms.h"
@@ -10,8 +11,8 @@ int main(int argc, char* argv[]){
 
     string g("../data/g20.edges");  // remember to run from release build to get optimal performance
 
-    uint32_t n, e;
-    graph neighbours = readGraph(g, e, n);
+    uint32_t e;
+    graph neighbours = readGraph(g, e);
 
 
     return 0;

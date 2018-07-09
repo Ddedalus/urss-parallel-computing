@@ -59,29 +59,19 @@ graph readGraph(string filename, uint32_t &numEdges, bool directed){
         cout<< "Read graph: "<<"Error opening " << filename << endl;
         exit(EXIT_FAILURE);
     }
-    string word;
-    uint32_t numNodes = 0;
     while(input.peek() == '#'){ // comments section
         string line; getline(input, line);
-        istringstream ss(line);
-        while(ss>>word){
-            if(word.find("Edges") != string::npos)
-                ss >> numEdges;
-            else if(word.find("Vertices") != string::npos ||
-                    word.find("Nodes") != string::npos)
-                ss >> numNodes;
-            else if(word.find("Undirected") != string::npos)
-                directed = 0;
-        }
     }
 
     graph neighbours;
+    numEdges=0;
     uint32_t from, to;
     while(input >> from >> to){
         neighbours[from].push_back(to);
-    	neighbours[to].push_back(from);
+    	if(!directed) neighbours[to].push_back(from);
+        numEdges++;
     }
-    cout<< "Read graph: "<<"Finished. Nodes="<<neighbours.size()
+    cout<< "Read graph: Nodes="<<neighbours.size()
                 <<" Edges=" << numEdges
                 <<" Directed=" << (directed ? "true" : "false") << endl;
     input.close();
