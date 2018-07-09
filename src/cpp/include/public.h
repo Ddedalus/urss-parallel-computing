@@ -9,7 +9,22 @@
 #include <string>
 
 
-using node = uint32_t;
-using graph = std::unordered_map<node, std::vector<node>>;
+using nodeId = uint32_t;
+
+class node{
+public: 
+    int pos;
+    std::vector<nodeId> neigh;
+    // constant time removal
+    nodeId removeEdge(int whichEdge){
+        auto temp = neigh[whichEdge];
+        neigh[whichEdge] = neigh.back();
+        neigh.pop_back();
+        return temp;
+    }
+};
+
+
+using graph = std::unordered_map<nodeId, node>;
 
 #endif

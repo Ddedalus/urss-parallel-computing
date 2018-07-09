@@ -13,5 +13,5 @@ void graph_io_test(){
     cout << "Read graph: "
     << (g.size() == 15) <<" "
     << (e == 19) << " "
-    << (g[2] == v2) << endl;
+    << (g[2].neigh == v2) << endl;
 }
