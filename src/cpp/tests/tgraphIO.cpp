@@ -1,6 +1,4 @@
 #include "tests.h"
-#include <string>
-#include <iostream>
 
 using namespace std;
 
@@ -10,11 +8,23 @@ void graph_io_test(){
 
     string sample("../data/sample.graph.txt");
     string binary("../output/sample.bin");
-    convertToBinary(sample, binary);
-
-    uint32_t n, e;
-    auto neighbours = readBinaryGraph(binary, n ,e);
-    for(auto  n : neighbours[2])
-        cout << n << " ";
-    cout<< "\n Read, Nodes=" << n << " Edges=" << e << endl;
+    uint32_t e;
+    graph g = readGraph(sample, e);
+    cout << "Graph created" << endl;
+    // cout<<"Size: " << g.size() << endl;
+    // for(auto li : g){
+    //     cout<<li.first<<": ";
+    //     for(auto el : li.second){
+    //         cout<< el << " ";
+    //     }
+    //     cout << endl;
+    // }
+    // cout<<"Fuck";
+    // g.clear();
+    // convertToBinary(sample, binary);
+    // auto neighbours = readBinaryGraph(binary, n ,e);
+    // auto neigh = g.at(2);
+    // for(auto  n : neigh)
+    //     cout << n << " ";
+    cout<< "Still alive";
 }

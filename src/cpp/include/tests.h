@@ -1,10 +1,10 @@
 #ifndef __TESTS_MINE_H__
 #define __TESTS_MINE_H__
 
-#include <iostream>
+#include "public.h"
 #include <string>
-#include <stdint.h>
 #include <fstream>
+
 #include "Bitset.h"
 #include "graphIO.h"
 
