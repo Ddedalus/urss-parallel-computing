@@ -11,12 +11,15 @@ using namespace std;
 
 int main(int argc, char* argv[]){
 
-    string path("../data/sample.graph.txt");  // remember to run from release build to get optimal performance
+    string path("../data/n4.edges");  // remember to run from release build to get optimal performance
 
     uint32_t e;
     graph g = readGraph(path, e);
+    Timer t("Standard BFS");
     cout << sspBFS(g, e) << endl;
+    t.print(); t.start("Tails BFS");
     cout << sspBFStails(g) <<endl;
+    t.print();
 
     return 0;
 }
