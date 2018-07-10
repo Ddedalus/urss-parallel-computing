@@ -1,14 +1,9 @@
+#include "public.h"
 #include "tests.h"
-
-#include <iostream>
-#include <vector>
-#include <string>
 
 using namespace std;
 
 int main(int argc, char* argv[]){
-
-    // run_record_test();
-
-    record_writer_test();
+    graph_io_test();
+    return 0;
 }

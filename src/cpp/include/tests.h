@@ -1,12 +1,14 @@
 #ifndef __TESTS_MINE_H__
 #define __TESTS_MINE_H__
 
-#include <iostream>
-#include <string>
-#include <stdint.h>
+#include "public.h"
 #include <fstream>
+#include <map>
+
 #include "Bitset.h"
 #include "graphIO.h"
+#include "RunRecord.h"
+#include "RecordWriter.h"
 
 void bitset_test();
 

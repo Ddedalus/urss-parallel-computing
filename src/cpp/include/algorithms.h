@@ -8,11 +8,9 @@
 #ifndef __ALGO_H__
 #define __ALGO_H__
 
-#include <vector>
+#include "public.h"
 #include <deque>
 #include <fstream>
-#include <iostream>
-#include <stdint.h>
 
 #include "Bitset.h"
 
@@ -29,7 +27,7 @@
  * @param numEdges total no. edges in neighbours
  * @return uint64_t sum of lengths of shortest paths between every pair of vertices.  
  */
-uint64_t sspBitset(const std::vector< std::vector<uint32_t> > &neighbours, uint32_t numEdges);
+uint64_t sspBitset(graph &neighbours, uint32_t numEdges);
 
 /**
  * @brief SSP by classical, queue based BFS applied to each node in turn.
@@ -40,7 +38,7 @@ uint64_t sspBitset(const std::vector< std::vector<uint32_t> > &neighbours, uint3
  * @param numEdges total no. edges in neighbours
  * @return uint64_t sum of lengths of shortest paths between every pair of vertices
  */
-uint64_t sspBFS(const std::vector< std::vector<uint32_t> > &neighbours, uint32_t numEdges);
+uint64_t sspBFS(graph &neighbours, uint32_t numEdges);
 
 /**
  * @brief SSP for a given source node, computed by a queue based BFS.
@@ -52,8 +50,8 @@ uint64_t sspBFS(const std::vector< std::vector<uint32_t> > &neighbours, uint32_t
  * @param numNodes in neighbours
  * @return uint64_t sum of lengths of shortest paths from v to each other node in the graph 
  */
-uint64_t vertexBFS(const std::vector< std::vector<uint32_t> > &neighbours, uint32_t s, uint32_t numNodes);
+uint64_t vertexBFS(graph &neighbours, uint32_t s);
 
-uint64_t sspParaBitset(const std::vector< std::vector<uint32_t> > &neighbours, uint32_t numEdges);
+uint64_t sspParaBitset(graph &neighbours, uint32_t numEdges);
 
 #endif

@@ -1,13 +1,12 @@
 #ifndef __RUNRECORD_H__
 #define __RUNRECORD_H__
 
+#include "public.h"
+
 #include <map>
-#include <string>
-#include <vector>
 #include <fstream>
 
 // timestamp handling
-#include <iostream>
 #include <iomanip>
 #include <ctime>
 #include <sstream>
