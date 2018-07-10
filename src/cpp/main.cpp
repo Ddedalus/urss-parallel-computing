@@ -15,10 +15,19 @@ int main(int argc, char* argv[]){
 
     uint32_t e;
     graph g = readGraph(path, e);
-    Timer t("Standard BFS");
-    cout << sspBFS(g, e) << endl;
-    t.print(); t.start("Tails BFS");
+    
+    Timer t("");
+
+    t.start("Tails BFS");
     cout << sspBFStails(g) <<endl;
+    t.print();
+
+    t.start("Standard BFS");
+    cout << sspBFS(g, e) << endl;
+    t.print();
+       
+    t.start("Bitset");
+    cout << sspBitset(g, e);
     t.print();
 
     return 0;
