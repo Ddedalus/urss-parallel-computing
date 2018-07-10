@@ -14,6 +14,12 @@
 
 #include "Bitset.h"
 
+struct qNode{   // BFS queue helper structure
+	node n;
+	uint32_t dist;
+};
+
+int assignPositions(graph &g);
 /**
  * @brief SSP building consecutive level sets for all vertices simultaneously by memoised iterative deepening.
  * 

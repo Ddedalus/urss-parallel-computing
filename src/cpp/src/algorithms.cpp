@@ -2,14 +2,9 @@
 
 using namespace std;
 
-struct qNode{
-	node n;
-	uint32_t dist;
-};
-
 int assignPositions(graph &g){
     int count=0;
-    for(auto n : g)
+    for(auto& n : g)
         n.second.pos = count++;
     return count;
 }
@@ -20,7 +15,7 @@ uint64_t vertexBFS(graph &g, node v){
 	deque<qNode> q;	// greater memory flexibility
 	q.push_back({v, 0}); visited[v.pos] = true;
 
-	while(!q.empty() && count < g.size()){
+	while(!q.empty() && count <= g.size()){
 		qNode current = q.front(); q.pop_front();
 		for(auto n : current.n.neigh){
       node ne = g[n];

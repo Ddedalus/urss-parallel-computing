@@ -13,8 +13,8 @@ using nodeId = uint32_t;
 
 class node{
 public: 
-    int pos;
     std::vector<nodeId> neigh;
+    int pos;
     // constant time removal
     nodeId removeEdge(int whichEdge){
         auto temp = neigh[whichEdge];

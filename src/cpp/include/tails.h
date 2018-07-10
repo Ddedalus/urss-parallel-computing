@@ -10,6 +10,6 @@
 
 
 std::unordered_map<nodeId, std::vector<uint32_t>> cutTails(graph& g);
-uint64_t sspBFStails(graph g);
+uint64_t sspBFStails(const graph& g);
 
 #endif

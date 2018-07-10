@@ -1,4 +1,5 @@
 #include "tails.h"
+#include "algorithms.h"
 
 using namespace std;
 
@@ -46,4 +47,51 @@ unordered_map<nodeId, vector<uint32_t>> cutTails(graph& g){
         }
     }
     return tails;
+}
+
+uint64_t vertexTailsBFS(graph &g, unordered_map<nodeId, vector<uint32_t>> tails, nodeId vid){
+    node v = g[vid];
+    uint64_t sum = 0, count = 1;
+    for(auto t : tails[vid])    // tails rooted at source
+        sum += t*(t+1)/2;
+    
+	vector<bool> visited(g.size(), false);
+	deque<qNode> q;
+	q.push_back({v, 0}); visited[v.pos] = true;
+	while(!q.empty() && count < g.size()){
+		qNode current = q.front(); q.pop_front();
+		for(auto n : current.n.neigh){
+            node ne = g[n];
+			if(! visited[ne.pos]){
+				q.push_back({ne, current.dist + 1});
+				sum += current.dist + 1;
+                for(auto t : tails[n]){ // tails rooted at ne
+                    sum += (current.dist+1)*t + t*(t+1)/2;
+                }
+				visited[ne.pos] = true;
+                count++;
+			}
+		}
+	}
+	return sum;
+}
+
+inline uint32_t tailContribution(uint32_t t, uint32_t n, uint64_t ssp){
+    return t * ssp + ((n - 2 * t)*t*(t+1))/2 + (t*(t+1)*(t-1))/3;
+}
+
+uint64_t sspBFStails(const graph& g){
+    auto gp = g;
+    auto tails = cutTails(gp);
+    assignPositions(gp);
+	uint64_t sum = 0;
+	for(auto iter = g.begin(); iter != g.end(); ++iter){
+	    auto ssp = vertexTailsBFS(gp, tails, iter->first);
+        for(auto t : tails[iter->first]){    // SSP calculated from these tails
+            auto tc = tailContribution(t, g.size(), ssp);
+            sum += tc;
+        }
+        sum += ssp;
+	}
+	return sum;
 }

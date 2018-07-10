@@ -4,21 +4,19 @@
 #include "graphIO.h"
 #include "algorithms.h"
 #include "Timer.h"
+#include "tails.h"
+
 
 using namespace std;
 
 int main(int argc, char* argv[]){
 
-    string path("../data/g20.edges");  // remember to run from release build to get optimal performance
+    string path("../data/sample.graph.txt");  // remember to run from release build to get optimal performance
 
     uint32_t e;
     graph g = readGraph(path, e);
-    Timer t("Bitset");
-    sspBitset(g, e);
-    cout << t.getElapsed() << endl;
-    t.start("BFS");
-    sspBFS(g, e);
-    cout << t.getElapsed();
+    cout << sspBFS(g, e) << endl;
+    cout << sspBFStails(g) <<endl;
 
     return 0;
 }

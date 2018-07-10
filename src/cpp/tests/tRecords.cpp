@@ -11,7 +11,7 @@ void run_record_test(){
     m2["id"] = "2"; m2["elapsed"] = "1.345"; m2["algo"] = "bitset"; m2["timestamp"]=t;
     m3["id"] = "3"; m3["elapsed"] = "23.4"; m3["algo"] = "bfs"; m3["timestamp"]=t;
     RunRecord r3(m3);
-
+    
     cout << "    --   RunRecord  --  " << endl;
     cout<< "Empty constructor: " << (r1.columns == m1) <<endl;
     cout<< "Defaults constructor: " << (r2.columns == m2) <<endl;
