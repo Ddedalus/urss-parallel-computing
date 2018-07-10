@@ -66,3 +66,14 @@ total %>% ggplot(aes(x=runtime, y=predicted)) + geom_point(alpha=0.2)
 varImpPlot(fit, n.var = 20)
 ```
 
+```{r}
+path<-here("src", "cpp", "data", "sample.graph.txt")
+
+sample.g.df <- read.csv2(path, sep = "\t", comment.char = "#", header = F)
+sample.g <- graph_from_data_frame(sample.g.df, directed = F)
+sample.g %>% gorder
+sample.g %>% gsize
+sample.g %>% plot
+
+```
+

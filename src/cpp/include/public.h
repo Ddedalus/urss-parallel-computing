@@ -22,6 +22,12 @@ public:
         neigh.pop_back();
         return temp;
     }
+    nodeId& operator[](int pos){
+        return neigh[pos];
+    }
+    int size(){
+        return neigh.size();
+    }
 };
 
 

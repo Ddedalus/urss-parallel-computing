@@ -2,45 +2,48 @@
 
 using namespace std;
 
-unordered_map<uint32_t, std::vector<uint32_t>> cutTails(graph& g){
+// returns a map from node Id to a list of tail lengths
+unordered_map<nodeId, vector<uint32_t>> cutTails(graph& g){
     unordered_map<uint32_t, vector<uint32_t>> tails;
-    node null = g.size() + 1;
+    nodeId null = g.size() + 1;
     auto count = 0;
-    for(node i = 0; i < g.size(); i++){
-        if(g[i].size() != 1) continue;
+    for(auto& pair : g){
+        if(pair.second.size() != 1) continue;
 
         int t = 1;  //length of the tail
-        node current = g[i][0], previous=i;
-        g[i][0] = null;
-        while(g[current].size() == 2){
+        nodeId previousId=pair.first, currentId = pair.second[0];
+        node* current = &g[currentId];
+        pair.second[0] = null;
+        while(current->size() == 2){
             t++;
             // select the other neighbour
-            node next = g[current][0] == previous ? g[current][0] : g[current][1];
-            g[current][0] = g[current][1] = null;   //remove edges from g
-            previous = current; current = next;
+            nodeId next = ((*current)[0] == previousId) ? (*current)[1] : (*current)[0];
+            (*current)[0] = null; (*current)[1] = null;   //remove edges at current
+            previousId = currentId; currentId = next;
+            current = &g[currentId];
         }
         count += t;
+        *find(current->neigh.begin(), current->neigh.end(), previousId) = null;
         // current is now the root:
-        tails[current].push_back(t);
+        tails[currentId].push_back(t);
     }
     tails.reserve(tails.size());    // rehash to allow optimal capacity
 
+    // cout<<"Removing " << count << " vertices as tail members" << endl;
     //clean up g:
-    cout<<"Removed " << count << "vertices as tails" << endl;
-    graph gp(g.size() - count);
-    for(auto neigh : g){
-        if(neigh.size() == 1) continue; // was certainly removed
-        else if(neigh.size() == 2 && neigh[0]==null)
-            continue; // was removed
-        else{
-            vector<node> new_adj;
-            for(auto n : neigh){
-                if(n != null)
-                    new_adj.push_back(n);
+    for(auto pair = g.begin(); pair != g.end();){
+        if(pair->second.size() <= 2 && pair->second[0]==null){
+            // cout << "Erasing vertex no "<< pair->first << endl;
+            pair = g.erase(pair); // node in a tail, removing
+        }
+        else{   // other nodes may have some edges removed
+            // cout << "Kept vertex no    "<< pair->first << endl;
+            for(auto index = 0; index <  pair->second.size(); index++){
+                if(pair->second[index] == null)
+                    pair->second.removeEdge(index--);    // swaps elements so we shall not increment the index.
             }
-            gp.push_back(new_adj);
+            ++pair;
         }
     }
-    g = gp;
     return tails;
 }
