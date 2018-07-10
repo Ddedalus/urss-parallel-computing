@@ -6,9 +6,15 @@
 using namespace std;
 
 int main(int argc, char* argv[]){
-    // graph_io_test();
-    
+
+    bitset_test();
+
+    graph_io_test();
+
+    run_record_test();
+
+    record_writer_test();
+
     tails_test();
 
-    return 0;
 }

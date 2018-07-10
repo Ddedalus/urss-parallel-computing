@@ -48,8 +48,3 @@ void bitset_test(){
     // for(int i = 0; i < 70; i++) cout<<l.get(i) << " ";
 
 }
-
-void bitset_rough(){
-    cout<< "All 1s in hex: " << hex << ~0ul << endl;
-    cout<< "2^63 in hex: " << hex << (1ul << 63) << endl;
-}

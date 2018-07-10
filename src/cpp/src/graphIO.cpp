@@ -71,9 +71,6 @@ graph readGraph(string filename, uint32_t &numEdges, bool directed){
     	if(!directed) neighbours[to].neigh.push_back(from);
         numEdges++;
     }
-    cout<< "Read graph: Nodes="<<neighbours.size()
-                <<" Edges=" << numEdges
-                <<" Directed=" << (directed ? "true" : "false") << endl;
     input.close();
     neighbours.reserve(neighbours.size());
     return neighbours;

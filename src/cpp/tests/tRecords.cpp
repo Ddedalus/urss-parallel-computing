@@ -7,13 +7,12 @@ void run_record_test(){
     RunRecord r2({"id", "elapsed", "algo"}, {"2", "1.345", "bitset"});
     map<string, string> m1, m2, m3;
     string t = RunRecord::getTimestamp();
-    m1["id"] = ""; m1["elapsed"] = ""; m1["algo"] = "";
-    m2["id"] = "2"; m2["elapsed"] = "1.345"; m2["algo"] = "bitset";
-    m3["id"] = "3"; m3["elapsed"] = "23.4"; m3["algo"] = "bfs";
+    m1["id"] = ""; m1["elapsed"] = ""; m1["algo"] = ""; m1["timestamp"]=t;
+    m2["id"] = "2"; m2["elapsed"] = "1.345"; m2["algo"] = "bitset"; m2["timestamp"]=t;
+    m3["id"] = "3"; m3["elapsed"] = "23.4"; m3["algo"] = "bfs"; m3["timestamp"]=t;
     RunRecord r3(m3);
 
     cout << "    --   RunRecord  --  " << endl;
-
     cout<< "Empty constructor: " << (r1.columns == m1) <<endl;
     cout<< "Defaults constructor: " << (r2.columns == m2) <<endl;
     cout<< "Map constructor: " << (r3.columns == m3) <<endl;
