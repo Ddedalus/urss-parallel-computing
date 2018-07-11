@@ -9,23 +9,17 @@
 #define __ALGO_H__
 
 #include "public.h"
-#include "graph.h"
 #include <deque>
 #include <fstream>
 
+#include "Graph.h"
 #include "Bitset.h"
 
-struct qNode{   // BFS queue helper structure
-	node n;
-	uint32_t dist;
-};
-
 struct qNodeLight{
-	nodeId n_id;
-	uint32_t dist;
+	nodeID n;
+	uint dist;
 };
 
-int assignPositions(graph &g);
 /**
  * @brief SSP building consecutive level sets for all vertices simultaneously by memoised iterative deepening.
  * 
@@ -39,7 +33,7 @@ int assignPositions(graph &g);
  * @param numEdges total no. edges in neighbours
  * @return uint64_t sum of lengths of shortest paths between every pair of vertices.  
  */
-uint64_t sspBitset(graph &neighbours, uint32_t numEdges);
+uint64_t sspBitset(Graph &g);
 
 /**
  * @brief SSP by classical, queue based BFS applied to each node in turn.
@@ -50,7 +44,7 @@ uint64_t sspBitset(graph &neighbours, uint32_t numEdges);
  * @param numEdges total no. edges in neighbours
  * @return uint64_t sum of lengths of shortest paths between every pair of vertices
  */
-uint64_t sspBFS(graph &neighbours, uint32_t numEdges);
+uint64_t sspBFS(Graph& g);
 
 /**
  * @brief SSP for a given source node, computed by a queue based BFS.
@@ -62,8 +56,8 @@ uint64_t sspBFS(graph &neighbours, uint32_t numEdges);
  * @param numNodes in neighbours
  * @return uint64_t sum of lengths of shortest paths from v to each other node in the graph 
  */
-uint64_t vertexBFS(graph &neighbours, uint32_t s);
+uint64_t vertexBFS(Graph& g, nodeID source);
 
-uint64_t sspParaBitset(graph &neighbours, uint32_t numEdges);
+uint64_t sspParaBitset(Graph& g);
 
 #endif

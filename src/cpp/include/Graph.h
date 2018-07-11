@@ -26,6 +26,7 @@ public:
         no_edges = 0;
     }
     denselyNumberedGraph(sparselyNumberedGraph& g, std::unordered_map<nodeID, nodeID>& transform);
+    denselyNumberedGraph(sparselyNumberedGraph& g);
     uint nodes() override {   return adj_list.size();  }
     std::vector<nodeID>& operator[](nodeID pos) override {
         return adj_list[pos];
@@ -106,10 +107,7 @@ public:
                 ++pair;
         }
     }
-    denselyNumberedGraph& denselyNumberedCopy(std::unordered_map<nodeID, nodeID>& transform);
 };
-
-sparselyNumberedGraph& sparselyNumberedCopy(denselyNumberedGraph& g);
 
 #endif
 

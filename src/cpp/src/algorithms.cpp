@@ -2,56 +2,49 @@
 
 using namespace std;
 
-int assignPositions(graph &g){
-    int count=0;
-    for(auto& n : g)
-        n.second.pos = count++;
-    return count;
-}
-
-uint64_t vertexBFS(graph &g, nodeId v_id){
+uint64_t vertexBFS(denselyNumberedGraph& g, nodeID v_id){
 	uint64_t sum = 0, count = 1;
-	vector<bool> visited(g.size(), false);
+	vector<bool> visited(g.nodes(), false);
 	deque<qNodeLight> q;	// greater memory flexibility
-	q.push_back({v_id, 0}); visited[g[v_id].pos] = true;
+	q.push_back({v_id, 0}); visited[v_id] = true;
 
-	while(!q.empty() && count < g.size()){
+	while(!q.empty() && count < g.nodes()){
 		qNodeLight current = q.front(); q.pop_front();
-		for(nodeId n : g[current.n_id].neigh){
-      int pos = g[n].pos;   // this causes slowdown by O(e) map seeks...
-			if(! visited[pos]){
+		for(nodeId n : g[current.n]){
+			if(! visited[n]){
 				q.push_back({n, current.dist + 1});
 				sum += current.dist + 1;
-				visited[pos] = true;
+				visited[n] = true;
         count++;
 			}
 		}
 	}
-  if(count < g.size())
-    cout<<"Haven't reached " << g.size() - count << " nodes" << endl;
+  if(count < g.nodes())
+    cout<<"Haven't reached " << g.nodes() - count << " nodes" << endl;
 	return sum;
 }
 
-uint64_t sspBFS(graph &g, uint32_t numEdges){
+uint64_t sspBFS(denselyNumberedGraph &g){
 	uint64_t sum = 0;
-  assignPositions(g);
-	for(auto iter = g.begin(); iter != g.end(); ++iter){
-	    sum += vertexBFS(g, iter->first);
+	for(uint i = 0; i < g.nodes(); i++){
+	    sum += vertexBFS(g, i);
 	}
 	return sum;
-
 }
 
-uint64_t sspBitset(graph &g, uint32_t numEdges)
+uint64_t sspBFS(sparselyNumberedGraph& g){
+  auto dg = denselyNumberedGraph(g);
+  return sspBFS(dg);
+}
+
+uint64_t sspBitset(denselyNumberedGraph &g)
 {
   // Sum of distances
   uint64_t sum = 0;
-  assignPositions(g);
   // Initialise reaching vector for each node
-  vector< Bitset > reaching(g.size(), Bitset(g.size()));
-  vector< Bitset > reachingNext(g.size(), Bitset(g.size()));
-  for (auto& pair : g) {
-    auto i = pair.second.pos;
+  vector< Bitset > reaching(g.nodes(), Bitset(g.nodes()));
+  vector< Bitset > reachingNext(g.nodes(), Bitset(g.nodes()));
+  for (uint i = 0; i < g.nodes(); i++) {
     reaching[i].set(i, true);
     reachingNext[i].set(i, true);
   }
@@ -62,22 +55,22 @@ uint64_t sspBitset(graph &g, uint32_t numEdges)
   bool done = false;
   while (! done) {
     // For each node
-    for (auto& pair : g) {
+    for (uint i = 0; i < g.nodes(); i++) {
       // For each neighbour
-      for (auto n : pair.second.neigh){
-        reachingNext[pair.second.pos] += reaching[g[n].pos];
+      for (auto n : g[i]){
+        reachingNext[i] += reaching[n];
       }
       // add the shortest paths found
-      sum += dist * reachingNext[pair.second.pos].diff_size(reaching[pair.second.pos]);
+      sum += dist * reachingNext[i].diff_size(reaching[i]);
     }
 
     // For each node, update reaching vector
     done = true;
-    for (auto& pair : g) {
-      reaching[pair.second.pos].copy_from(reachingNext[pair.second.pos]);
-      if(! reaching[pair.second.pos].is_full()){
+    for (uint i = 0; i < g.nodes(); i++) {
+      reaching[i].copy_from(reachingNext[i]);
+      if(done && !reaching[i].is_full()){
         done = false;
-        // cout<<"Node "<< pair.second.pos <<" not full, size: "<< reaching[pair.second.pos].count()<<endl;
+        // cout<<"Node "<< i <<" not full, size: "<< reaching[i].count()<<endl;
       }
     }
     dist++;
@@ -87,50 +80,7 @@ uint64_t sspBitset(graph &g, uint32_t numEdges)
   return sum;
 }
 
-// uint64_t sspParaBitset(graph &g, uint32_t numEdges)
-// {
-//   // Sum of distances
-//   uint64_t sum = 0;
-//   assignPositions(g);
-//   // Initialise reaching vector for each node
-//   vector< Bitset > reaching(g.size(), Bitset(g.size()));
-//   vector< Bitset > reachingNext(g.size(), Bitset(g.size()));
-//   for (auto& pair : g) {
-//     reaching[pair.second.pos].set(i, true);
-//     reachingNext[pair.second.pos].set(i, true);
-//   }
-
-//   // Distance increases on each iteration
-//   uint32_t dist = 1;
-
-//   bool done = false;
-//   while (! done) {
-//     #pragma omp parallel
-//     {
-//       // For each node
-//       #pragma omp for reduction(+ : sum)
-//       for (auto& pair : g) {
-//         // For each neighbour
-//         for (auto n : pair.second.neigh){
-//           reachingNext[g[n].pos] += reaching[g[n.pos]];
-//         }
-//         // add the shortest paths found
-//         sum += dist * reachingNext[pair.second.pos].diff_size(reaching[pair.second.pos]);
-//       }
-
-//       // For each node, update reaching vector
-//       done = true;
-//       #pragma omp for reduction(&& : done)
-//       for (auto& pair : g) {
-//         reaching[pair.second.pos].copy_from(reachingNext[pair.second.pos]);
-//         if(! reaching[pair.second.pos].is_full()){
-//           done = false;
-//           // cout<<"Node "<< i <<" not full, size: "<< reaching[i].count()<<endl;
-//         }
-//       }
-//     }
-//     dist++;
-//   }
-
-//   return sum;
-// }
+uint64_t sspBitset(sparselyNumberedGraph &g){
+  auto dg = denselyNumberedGraph(g);
+  return sspBitset(dg);
+}
