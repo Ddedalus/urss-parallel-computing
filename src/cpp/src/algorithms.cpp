@@ -9,18 +9,18 @@ int assignPositions(graph &g){
     return count;
 }
 
-uint64_t vertexBFS(graph &g, node v){
+uint64_t vertexBFS(graph &g, nodeId v_id){
 	uint64_t sum = 0, count = 1;
 	vector<bool> visited(g.size(), false);
-	deque<qNode> q;	// greater memory flexibility
-	q.push_back({v, 0}); visited[v.pos] = true;
+	deque<qNodeLight> q;	// greater memory flexibility
+	q.push_back({v_id, 0}); visited[g[v_id].pos] = true;
 
 	while(!q.empty() && count <= g.size()){
-		qNode current = q.front(); q.pop_front();
-		for(auto n : current.n.neigh){
+		qNodeLight current = q.front(); q.pop_front();
+		for(auto n : g[current.n_id].neigh){
       node ne = g[n];
 			if(! visited[ne.pos]){
-				q.push_back({ne, current.dist + 1});
+				q.push_back({n, current.dist + 1});
 				sum += current.dist + 1;
 				visited[ne.pos] = true;
         count++;
@@ -36,7 +36,7 @@ uint64_t sspBFS(graph &g, uint32_t numEdges){
 	uint64_t sum = 0;
   assignPositions(g);
 	for(auto iter = g.begin(); iter != g.end(); ++iter){
-	    sum += vertexBFS(g, iter->second);
+	    sum += vertexBFS(g, iter->first);
 	}
 	return sum;
 

@@ -18,16 +18,16 @@ int main(int argc, char* argv[]){
     
     Timer t("");
 
-    t.start("Tails BFS");
-    cout << sspBFStails(g) <<endl;
-    t.print();
+    // t.start("Tails BFS");
+    // cout << sspBFStails(g) <<endl;
+    // t.print();
 
     t.start("Standard BFS");
     cout << sspBFS(g, e) << endl;
     t.print();
        
     t.start("Bitset");
-    cout << sspBitset(g, e);
+    cout << sspBitset(g, e) << endl;
     t.print();
 
     return 0;

@@ -25,7 +25,7 @@ install(TARGETS testLib DESTINATION lib)
 add_executable(main main.cpp)
 target_compile_options(main PUBLIC "-O3")
 target_link_libraries(main myLib)
-target_link_libraries(main testLib)
+# target_link_libraries(main testLib)
 install(TARGETS main DESTINATION build)
 
 add_executable(tests main-tests.cpp)
@@ -33,9 +33,3 @@ target_link_libraries(tests myLib)
 target_link_libraries(tests testLib)
 target_compile_options(tests PUBLIC "-O3")
 install(TARGETS tests DESTINATION build)
-
-# build additional binary from alternative version of the main file
-# add_executable(bitset alt-main.cpp)
-# target_link_libraries(bitset myLib)
-# target_compile_options(bitset  PUBLIC -O2)
-# install(TARGETS bitset DESTINATION bin)

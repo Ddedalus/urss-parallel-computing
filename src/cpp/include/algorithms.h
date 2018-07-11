@@ -19,6 +19,11 @@ struct qNode{   // BFS queue helper structure
 	uint32_t dist;
 };
 
+struct qNodeLight{
+	nodeId n_id;
+	uint32_t dist;
+};
+
 int assignPositions(graph &g);
 /**
  * @brief SSP building consecutive level sets for all vertices simultaneously by memoised iterative deepening.
