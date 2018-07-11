@@ -15,14 +15,14 @@ uint64_t vertexBFS(graph &g, nodeId v_id){
 	deque<qNodeLight> q;	// greater memory flexibility
 	q.push_back({v_id, 0}); visited[g[v_id].pos] = true;
 
-	while(!q.empty() && count <= g.size()){
+	while(!q.empty() && count < g.size()){
 		qNodeLight current = q.front(); q.pop_front();
-		for(auto n : g[current.n_id].neigh){
-      node ne = g[n];
-			if(! visited[ne.pos]){
+		for(nodeId n : g[current.n_id].neigh){
+      int pos = g[n].pos;   // this causes slowdown by O(e) map seeks...
+			if(! visited[pos]){
 				q.push_back({n, current.dist + 1});
 				sum += current.dist + 1;
-				visited[ne.pos] = true;
+				visited[pos] = true;
         count++;
 			}
 		}
