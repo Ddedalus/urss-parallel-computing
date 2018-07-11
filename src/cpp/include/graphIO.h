@@ -3,14 +3,16 @@
 
 #include "public.h"
 
+#include "Graph.h"
+
 #include <fstream>
 #include <sstream>
 #include <string>
 
-void convertToBinary(std::string filename, std::string outfilename);
+// void convertToBinary(std::string filename, std::string outfilename);
 
-graph readBinaryGraph(std::string filename, uint32_t &numEdges, uint32_t &numNodes);
+// graph readBinaryGraph(std::string filename, uint32_t &numEdges, uint32_t &numNodes);
 
-graph readGraph(std::string filename, uint32_t &numEdges, bool directed=false);
+void readGraph(Graph& neighbours, std::string filename, bool directed=false);
 
 #endif

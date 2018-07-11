@@ -6,7 +6,7 @@
 #include "Timer.h"
 #include "tails.h"
 
-#include "graph.h"
+#include "Graph.h"
 
 
 
@@ -14,10 +14,12 @@ using namespace std;
 
 int main(int argc, char* argv[]){
 
-    string path("../data/n4.edges");  // remember to run from release build to get optimal performance
+    string path("../data/g20.edges");  // remember to run from release build to get optimal performance
 
-    uint32_t e;
-    graph g = readGraph(path, e);
+    mapGraph mg;
+    vecGraph vg(1000);
+    readGraph(mg, path);
+    readGraph(vg, path);
     Timer t;
 
     // t.start("Tails BFS");
@@ -25,12 +27,16 @@ int main(int argc, char* argv[]){
     // t.print();
 
     // t.start("Standard BFS");
-    // cout << sspBFS(g, e) << endl;
+    // cout << sspBFS(g) << endl;
     // t.print();
        
-    // t.start("Bitset");
-    // cout << sspBitset(g, e) << endl;
-    // t.print();
+    t.start("Bitset on map");
+    cout << sspBitset(mg) << endl;
+    t.print();
+
+    t.start("Bitset on vec");
+    cout << sspBitset(vg) << endl;
+    t.print();
 
     return 0;
 }

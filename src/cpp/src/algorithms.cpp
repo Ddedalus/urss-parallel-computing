@@ -2,7 +2,7 @@
 
 using namespace std;
 
-uint64_t vertexBFS(denselyNumberedGraph& g, nodeID v_id){
+uint64_t vertexBFS(vecGraph& g, nodeID v_id){
 	uint64_t sum = 0, count = 1;
 	vector<bool> visited(g.nodes(), false);
 	deque<qNodeLight> q;	// greater memory flexibility
@@ -24,7 +24,7 @@ uint64_t vertexBFS(denselyNumberedGraph& g, nodeID v_id){
 	return sum;
 }
 
-uint64_t sspBFS(denselyNumberedGraph &g){
+uint64_t sspBFS(vecGraph &g){
 	uint64_t sum = 0;
 	for(uint i = 0; i < g.nodes(); i++){
 	    sum += vertexBFS(g, i);
@@ -32,12 +32,12 @@ uint64_t sspBFS(denselyNumberedGraph &g){
 	return sum;
 }
 
-uint64_t sspBFS(sparselyNumberedGraph& g){
-  auto dg = denselyNumberedGraph(g);
+uint64_t sspBFS(mapGraph& g){
+  auto dg = vecGraph(g);
   return sspBFS(dg);
 }
 
-uint64_t sspBitset(denselyNumberedGraph &g)
+uint64_t sspBitset(vecGraph &g)
 {
   // Sum of distances
   uint64_t sum = 0;
@@ -63,7 +63,6 @@ uint64_t sspBitset(denselyNumberedGraph &g)
       // add the shortest paths found
       sum += dist * reachingNext[i].diff_size(reaching[i]);
     }
-
     // For each node, update reaching vector
     done = true;
     for (uint i = 0; i < g.nodes(); i++) {
@@ -74,13 +73,12 @@ uint64_t sspBitset(denselyNumberedGraph &g)
       }
     }
     dist++;
-    // cout << "Distance " << dist << endl;
   }
 
   return sum;
 }
 
-uint64_t sspBitset(sparselyNumberedGraph &g){
-  auto dg = denselyNumberedGraph(g);
+uint64_t sspBitset(mapGraph &g){
+  auto dg = vecGraph(g);
   return sspBitset(dg);
 }

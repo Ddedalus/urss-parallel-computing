@@ -10,7 +10,7 @@
 #include "RunRecord.h"
 #include "RecordWriter.h"
 #include "tails.h"
-#include "graph.h"
+#include "Graph.h"
 
 
 void bitset_test();

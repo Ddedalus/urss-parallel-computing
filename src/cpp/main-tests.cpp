@@ -1,7 +1,7 @@
 #include "public.h"
 #include "tests.h"
 #include "tails.h"
-#include "graph.h"
+#include "Graph.h"
 
 
 using namespace std;
