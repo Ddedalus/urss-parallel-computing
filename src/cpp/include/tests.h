@@ -10,6 +10,7 @@
 #include "RunRecord.h"
 #include "RecordWriter.h"
 #include "tails.h"
+#include "graph.h"
 
 
 void bitset_test();
@@ -21,6 +22,8 @@ void run_record_test();
 void record_writer_test();
 
 void tails_test();
+
+void graph_test();
 
 void tests();
 

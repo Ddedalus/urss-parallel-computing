@@ -9,6 +9,7 @@
 #define __ALGO_H__
 
 #include "public.h"
+#include "graph.h"
 #include <deque>
 #include <fstream>
 

@@ -6,6 +6,9 @@
 #include "Timer.h"
 #include "tails.h"
 
+#include "graph.h"
+
+
 
 using namespace std;
 
@@ -15,20 +18,19 @@ int main(int argc, char* argv[]){
 
     uint32_t e;
     graph g = readGraph(path, e);
-    
-    Timer t("");
+    Timer t;
 
     // t.start("Tails BFS");
     // cout << sspBFStails(g) <<endl;
     // t.print();
 
-    t.start("Standard BFS");
-    cout << sspBFS(g, e) << endl;
-    t.print();
+    // t.start("Standard BFS");
+    // cout << sspBFS(g, e) << endl;
+    // t.print();
        
-    t.start("Bitset");
-    cout << sspBitset(g, e) << endl;
-    t.print();
+    // t.start("Bitset");
+    // cout << sspBitset(g, e) << endl;
+    // t.print();
 
     return 0;
 }

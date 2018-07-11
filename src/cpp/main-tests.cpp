@@ -1,6 +1,7 @@
 #include "public.h"
 #include "tests.h"
 #include "tails.h"
+#include "graph.h"
 
 
 using namespace std;
@@ -16,5 +17,7 @@ int main(int argc, char* argv[]){
     record_writer_test();
 
     tails_test();
+
+    graph_test();
 
 }
