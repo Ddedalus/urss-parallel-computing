@@ -9,11 +9,11 @@
 #ifndef __BITSET_H__
 #define __BITSET_H__
 
-#include <stdint.h>
-#include <vector>
+#include "public.h"
 
 class Bitset
 {
+    friend std::ostream& operator<<(std::ostream& os, const Bitset& b);
     private:
         std::vector<uint64_t> storage;
         uint32_t size;
@@ -30,6 +30,11 @@ class Bitset
         Bitset(uint32_t size);
 
         /**
+         * @brief This rounded up to multiple of 64 defines space usage.
+         * @return uint32_t Number of positions stored
+         */
+        uint32_t getSize() const {return size;}
+        /**
          * @brief Change a single element
          * 
          * @param pos starting at 0, unchecked
@@ -41,7 +46,7 @@ class Bitset
          * 
          * @param pos starting at 0, unchecked
          */
-        bool get(int pos);
+        bool get(int pos) const;
         /**
          * @brief Calculate union in-place.
          * 
@@ -60,7 +65,7 @@ class Bitset
         /**
          * @brief Order of this subset.
          */
-        uint32_t count();
+        uint32_t count() const;
         /**
          * @brief Calculates complement set this - other
          * 

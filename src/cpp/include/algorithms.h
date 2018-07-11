@@ -15,7 +15,8 @@
 #include "Graph.h"
 #include "Bitset.h"
 
-struct qNodeLight{
+struct qNodeLight
+{
 	nodeID n;
 	uint dist;
 };
@@ -45,8 +46,8 @@ uint64_t sspBitset(vecGraph &g);
  * @param numEdges total no. edges in neighbours
  * @return uint64_t sum of lengths of shortest paths between every pair of vertices
  */
-uint64_t sspBFS(mapGraph& g);
-uint64_t sspBFS(vecGraph& g);
+uint64_t sspBFS(mapGraph &g);
+uint64_t sspBFS(vecGraph &g);
 
 /**
  * @brief SSP for a given source node, computed by a queue based BFS.
@@ -58,6 +59,6 @@ uint64_t sspBFS(vecGraph& g);
  * @param numNodes in neighbours
  * @return uint64_t sum of lengths of shortest paths from v to each other node in the graph 
  */
-uint64_t vertexBFS(vecGraph& g, nodeID source);
+uint64_t vertexBFS(vecGraph &g, nodeID source);
 
 #endif

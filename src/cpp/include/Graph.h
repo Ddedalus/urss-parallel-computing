@@ -9,12 +9,13 @@ using Node = std::vector<nodeID>;
 // if needed, vector property table may be added later.
 class Graph
 {
+    friend std::ostream &operator<<(std::ostream &os, Graph &g);
 protected:
     uint no_edges;
     /* data */
 public:
-    uint edges(){return no_edges;}
-    virtual uint nodes() = 0;
+    uint edges() const {return no_edges;}
+    virtual uint nodes() const = 0;
     virtual std::vector<nodeID>& operator[](nodeID pos) = 0;    // just get adjacency pair
     virtual void addEdge(nodeID from, nodeID to, bool directed)=0;
 };
@@ -29,7 +30,7 @@ public:
     }
     vecGraph(mapGraph& g, std::unordered_map<nodeID, nodeID>& transform);
     vecGraph(mapGraph& g);
-    uint nodes() override {   return adj_list.size();  }
+    uint nodes() const override {   return adj_list.size();  }
     std::vector<nodeID>& operator[](nodeID pos) override {
         return adj_list[pos];
     }
@@ -58,7 +59,7 @@ private:
 public:
     mapGraph() : Graph(), erase_mark(0){}
     mapGraph(vecGraph& g);
-    uint nodes() override {   return adj_map.size();}
+    uint nodes() const override {   return adj_map.size();}
     std::vector<nodeID>& operator[](nodeID pos) override {
         return adj_map[pos];
     }

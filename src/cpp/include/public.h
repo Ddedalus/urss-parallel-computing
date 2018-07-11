@@ -8,6 +8,7 @@
 #include <iostream>
 #include <string>
 
+#include "printing.h"
 
 using nodeId = uint32_t;
 

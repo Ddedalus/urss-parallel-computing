@@ -8,8 +8,6 @@
 
 #include "Graph.h"
 
-
-
 using namespace std;
 
 int main(int argc, char* argv[]){
@@ -17,8 +15,11 @@ int main(int argc, char* argv[]){
     string path("../data/g20.edges");  // remember to run from release build to get optimal performance
 
     mapGraph mg;
+
     vecGraph vg(1000);
     readGraph(mg, path);
+    cout << mg[2] << endl;
+    cout << mg;
     readGraph(vg, path);
     Timer t;
 
