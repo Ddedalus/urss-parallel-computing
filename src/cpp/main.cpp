@@ -12,24 +12,22 @@ using namespace std;
 
 int main(int argc, char* argv[]){
 
-    string path("../data/g20.edges");  // remember to run from release build to get optimal performance
+    string path("../data/5kbarabasi.edges");  // remember to run from release build to get optimal performance
 
     mapGraph mg;
 
     vecGraph vg(1000);
     readGraph(mg, path);
-    cout << mg[2] << endl;
-    cout << mg;
     readGraph(vg, path);
     Timer t;
 
-    // t.start("Tails BFS");
-    // cout << sspBFStails(g) <<endl;
-    // t.print();
+    t.start("Tails BFS");
+    cout << sspBFStails(mg) <<endl;
+    t.print();
 
-    // t.start("Standard BFS");
-    // cout << sspBFS(g) << endl;
-    // t.print();
+    t.start("Standard BFS");
+    cout << sspBFS(vg) << endl;
+    t.print();
        
     t.start("Bitset on map");
     cout << sspBitset(mg) << endl;

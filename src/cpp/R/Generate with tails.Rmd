@@ -1,0 +1,22 @@
+---
+title: "Generate scale free networks"
+output: html_notebook
+---
+```{r}
+b <- barabasi.game(5000, power = 0.1, m = NULL, out.dist = NULL, out.seq = NULL, out.pref = FALSE, zero.appeal = 1, directed = FALSE,
+algorithm ="psumtree", start.graph = NULL);
+
+b %>% plot(vertex.size=0.5, vertex.label=NA);
+b %>% write.graph(file = here("src", "cpp", "data", "5kbarabasi.edges"), format = "edgelist")
+```
+
+```{r}
+sample.g.path<-here("src", "cpp", "data", "sample.graph.txt")
+sample.g.df <- read.csv2(sample.g.path, sep = "\t", comment.char = "#", header = F)
+sample.g <- graph_from_data_frame(sample.g.df, directed = F)
+sample.g %>% gorder
+sample.g %>% gsize
+sample.g %>% plot(layout=layout_nicely)
+sample.g %>% distances %>% sum
+
+```
