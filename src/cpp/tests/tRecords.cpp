@@ -17,8 +17,8 @@ void run_record_test(){
     cout<< "Defaults constructor: " << (r2.columns == m2) <<endl;
     cout<< "Map constructor: " << (r3.columns == m3) <<endl;
 
-    r1.setValue("id", "1");
-    cout << "Set&get value: " << (r1.getValue("id") =="1") << endl;
+    r1["id"] = "1";
+    cout << "Set&get value: " << (r1["id"] =="1") << endl;
 
     cout << "getHeader: " << (r2.getHeader().compare("algo\telapsed\tid\ttimestamp\n")==0) << endl;
     cout << "toString: " << (r2.toString() == "bitset\t1.345\t2\t" + r2.getTimestamp() + "\n") << endl;
@@ -62,7 +62,7 @@ void record_writer_test(){
     RecordWriter rw2(csvpath);
     cout << "Imported header: " << (rw2.header.size() == 5) << endl;
     cout << "getString: "
-    << (rw2.getString(r2) == "bitset;1.345;2;" + r2.getValue("timestamp") + "\n") << endl;
+    << (rw2.getString(r2) == "bitset;1.345;2;" + r2["timestamp"] + "\n") << endl;
     cout << "getHeader: " << (rw2.getHeader(r2) == "_id;algo;elapsed;id;timestamp\n") << endl;
     cout << "checkRecordCorrect: " << rw2.checkRecordCorrect(r2) << endl;
   

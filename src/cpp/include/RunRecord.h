@@ -63,8 +63,7 @@ public:
      * @param column Name of the column. New column will be added if not yet in header
      * @return old value found in this column. Overwritten.
      */
-    std::string setValue(std::string column, std::string value);
-    std::string getValue(std::string column);
+    std::string& operator[](std::string column);
 
     /**
      * @brief Get values of all elements as a single, tab delimited string.

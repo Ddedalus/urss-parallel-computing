@@ -31,13 +31,7 @@ RunRecord::RunRecord(std::map<std::string, std::string> initMap) : columns(initM
     columns["timestamp"] = getTimestamp();
 }
 
-std::string RunRecord::setValue(std::string column, std::string value){
-    auto ret = columns[column];
-    columns[column] = value;
-    return ret;
-}
-
-std::string RunRecord::getValue(std::string column){
+std::string& RunRecord::operator[](std::string column){
     return columns[column];
 }
 
