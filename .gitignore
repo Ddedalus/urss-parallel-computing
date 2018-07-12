@@ -81,3 +81,4 @@ src/cpp/output/
 \.RDataTmp1
 
 src/cpp/release/
+src/cpp/data/**/*

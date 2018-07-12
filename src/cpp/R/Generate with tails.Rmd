@@ -3,11 +3,16 @@ title: "Generate scale free networks"
 output: html_notebook
 ---
 ```{r}
-b <- barabasi.game(5000, power = 0.1, m = NULL, out.dist = NULL, out.seq = NULL, out.pref = FALSE, zero.appeal = 1, directed = FALSE,
+getTailedGraph <- function(thousands) {
+  b <- barabasi.game(1000*thousands, power = 0.1, m = NULL, out.dist = NULL, out.seq = NULL, out.pref = FALSE, zero.appeal = 1, directed = FALSE,
 algorithm ="psumtree", start.graph = NULL);
-
-b %>% plot(vertex.size=0.5, vertex.label=NA);
-b %>% write.graph(file = here("src", "cpp", "data", "5kbarabasi.edges"), format = "edgelist")
+}
+for(t in c(1, 2, 4, 8, seq(10, 100, by=10))){
+  b <- getTailedGraph(t);
+  b %>% write.graph(file = here("src", "cpp", "data", "barabasi", paste0(t, "k.edges")), format = "edgelist")
+}
+b <- getTailedGraph(20);
+# b %>% plot(vertex.size=0.5, vertex.label=NA);
 ```
 
 ```{r}
