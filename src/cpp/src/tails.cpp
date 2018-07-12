@@ -83,12 +83,7 @@ tailsMap transfromTails(tailsMap &tails, transformMap &tr)
     tailsMap ret;
     ret.reserve(tails.size());
     for (auto &pair : tails)
-    {
-        for (uint i = 0; i < pair.second.size(); i++)
-        {
-            ret[tr[i]].push_back(tr[pair.second[i]]);
-        }
-    }
+        ret[tr[pair.first]] = pair.second;
     return ret;
 }
 
@@ -103,7 +98,7 @@ uint64_t sspBFStails(const mapGraph &g)
     for (uint i = 0; i < vg.nodes(); i++)
     {
         auto ssp = vertexTailsBFS(vg, nTails, i);
-        for (auto t : tails[i])
+        for (auto t : nTails[i])
         { // SSP calculated from these tails
             auto tc = tailContribution(t, g.nodes(), ssp);
             sum += tc;
