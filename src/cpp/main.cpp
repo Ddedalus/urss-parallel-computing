@@ -5,48 +5,76 @@
 #include "algorithms.h"
 #include "Timer.h"
 #include "tails.h"
-
 #include "Graph.h"
+
+// list directory:
+#include <sys/types.h>
+#include <dirent.h>
 
 using namespace std;
 
-int main(int argc, char* argv[]){
+void read_directory(string inputPath, vector<string> &names)
+{
+    DIR *dirp = opendir(inputPath.c_str());
+    struct dirent *dp;
+    while ((dp = readdir(dirp)) != NULL)
+    {
+        if (dp->d_type == 8)
+            names.push_back(dp->d_name);
+    }
+    closedir(dirp);
+    std::sort(names.begin(), names.end());
+}
 
-    string path("../data/5kbarabasi.edges");  // remember to run from release build to get optimal performance
+int main(int argc, char *argv[])
+{
 
-    mapGraph mg;
+    string inputPath("../data/barabasi/");
 
-    vecGraph vg(1000);
-    readGraph(mg, path);
-    readGraph(vg, path);
+    vector<string> inputNames;
+    read_directory(inputPath, inputNames);
+    
     Timer t;
+    for(auto p : inputNames){
+        mapGraph mg;
+        readGraph(mg, inputPath + p);
+        t.start("Bitset: " + p);
+        sspBitset(mg);
+        t.print();
+    }
+    // mapGraph mg;
 
-    t.start("Tails BFS");
-    cout << sspBFStails(mg) <<endl;
-    t.print();
+    // vecGraph vg(1000);
+    // readGraph(mg, path);
+    // readGraph(vg, path);
+    // Timer t;
 
-    t.start("Standard BFS");
-    cout << sspBFS(vg) << endl;
-    t.print();
-       
-    t.start("Bitset on map");
-    cout << sspBitset(mg) << endl;
-    t.print();
+    // t.start("Tails BFS");
+    // cout << sspBFStails(mg) << endl;
+    // t.print();
 
-    t.start("Bitset on vec");
-    cout << sspBitset(vg) << endl;
-    t.print();
+    // t.start("Standard BFS");
+    // cout << sspBFS(vg) << endl;
+    // t.print();
+
+    // t.start("Bitset on map");
+    // cout << sspBitset(mg) << endl;
+    // t.print();
+
+    // t.start("Bitset on vec");
+    // cout << sspBitset(vg) << endl;
+    // t.print();
 
     return 0;
 }
 
-    // Timer t("Parallel Bitset");
-    // auto check = sspParaBitset(neighbours, e);
-    // t.print();
+// Timer t("Parallel Bitset");
+// auto check = sspParaBitset(neighbours, e);
+// t.print();
 
-    // t.start("Bitset");
-    // check = sspBitset(neighbours, e);
-    // t.print();
+// t.start("Bitset");
+// check = sspBitset(neighbours, e);
+// t.print();
 
 // int main(int argc, char**argv)
 // {
@@ -55,7 +83,7 @@ int main(int argc, char* argv[]){
 //     exit(EXIT_FAILURE);
 //   }
 
-//   uint32_t numEdges, numNodes;   
+//   uint32_t numEdges, numNodes;
 //   auto neighbours = readGraph(argv[1], numEdges, numNodes);
 
 //   struct timeval start, finish, diff;
@@ -66,7 +94,7 @@ int main(int argc, char* argv[]){
 
 //   cout<< "Sum of shortest paths = " << sum << endl;
 //   cout << "Average path length: " << sum * 1.0 /(numNodes * (numNodes - 1)) << endl;
- 
+
 //   timersub(&finish, &start, &diff);
 //   double duration = (double) diff.tv_sec + (double) diff.tv_usec / 1000000.0;
 //   cout << "Time = " << duration << endl;

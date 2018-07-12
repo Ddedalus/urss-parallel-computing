@@ -7,9 +7,14 @@ getTailedGraph <- function(thousands) {
   b <- barabasi.game(1000*thousands, power = 0.1, m = NULL, out.dist = NULL, out.seq = NULL, out.pref = FALSE, zero.appeal = 1, directed = FALSE,
 algorithm ="psumtree", start.graph = NULL);
 }
+```
+
+```{r}
+library(stringr)
 for(t in c(1, 2, 4, 8, seq(10, 100, by=10))){
   b <- getTailedGraph(t);
-  b %>% write.graph(file = here("src", "cpp", "data", "barabasi", paste0(t, "k.edges")), format = "edgelist")
+  
+  b %>% write.graph(file = here("src", "cpp", "data", "barabasi", paste0(str_pad(t, 3, pad = "0"), "k.edges")), format = "edgelist")
 }
 b <- getTailedGraph(20);
 # b %>% plot(vertex.size=0.5, vertex.label=NA);

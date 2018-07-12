@@ -175,19 +175,28 @@ $(document).ready(function () {
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZ2V0VGFpbGVkR3JhcGggPC0gZnVuY3Rpb24odGhvdXNhbmRzKSB7XG4gIGIgPC0gYmFyYWJhc2kuZ2FtZSgxMDAwKnRob3VzYW5kcywgcG93ZXIgPSAwLjEsIG0gPSBOVUxMLCBvdXQuZGlzdCA9IE5VTEwsIG91dC5zZXEgPSBOVUxMLCBvdXQucHJlZiA9IEZBTFNFLCB6ZXJvLmFwcGVhbCA9IDEsIGRpcmVjdGVkID0gRkFMU0UsXG5hbGdvcml0aG0gPVwicHN1bXRyZWVcIiwgc3RhcnQuZ3JhcGggPSBOVUxMKTtcbn1cbmZvcih0IGluIGMoMSwgMiwgNCwgOCwgc2VxKDEwLCAxMDAsIGJ5PTEwKSkpe1xuICBiIDwtIGdldFRhaWxlZEdyYXBoKHQpO1xuICB3cml0ZS5ncmFwaChmaWxlID0gaGVyZShcInNyY1wiLCBcImNwcFwiLCBcImRhdGFcIiwgXCJiYXJhYmFzaVwiLCBwYXN0ZTAodCwgXCJrLmVkZ2VzXCIpKSwgZm9ybWF0ID0gXCJlZGdlbGlzdFwiKVxufVxuYGBgIn0= -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZ2V0VGFpbGVkR3JhcGggPC0gZnVuY3Rpb24odGhvdXNhbmRzKSB7XG4gIGIgPC0gYmFyYWJhc2kuZ2FtZSgxMDAwKnRob3VzYW5kcywgcG93ZXIgPSAwLjEsIG0gPSBOVUxMLCBvdXQuZGlzdCA9IE5VTEwsIG91dC5zZXEgPSBOVUxMLCBvdXQucHJlZiA9IEZBTFNFLCB6ZXJvLmFwcGVhbCA9IDEsIGRpcmVjdGVkID0gRkFMU0UsXG5hbGdvcml0aG0gPVwicHN1bXRyZWVcIiwgc3RhcnQuZ3JhcGggPSBOVUxMKTtcbn1cbmBgYCJ9 -->
+<pre class="r"><code>getTailedGraph &lt;- function(thousands) {
+  b &lt;- barabasi.game(1000*thousands, power = 0.1, m = NULL, out.dist = NULL, out.seq = NULL, out.pref = FALSE, zero.appeal = 1, directed = FALSE,
+algorithm =&quot;psumtree&quot;, start.graph = NULL);
+}</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-chunk-end -->
+<!-- rnb-text-begin -->
+<!-- rnb-text-end -->
+<!-- rnb-chunk-begin -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuZ2V0VGFpbGVkR3JhcGggPC0gZnVuY3Rpb24odGhvdXNhbmRzKSB7XG4gIGIgPC0gYmFyYWJhc2kuZ2FtZSgxMDAwKnRob3VzYW5kcywgcG93ZXIgPSAwLjEsIG0gPSBOVUxMLCBvdXQuZGlzdCA9IE5VTEwsIG91dC5zZXEgPSBOVUxMLCBvdXQucHJlZiA9IEZBTFNFLCB6ZXJvLmFwcGVhbCA9IDEsIGRpcmVjdGVkID0gRkFMU0UsXG5hbGdvcml0aG0gPVwicHN1bXRyZWVcIiwgc3RhcnQuZ3JhcGggPSBOVUxMKTtcbn1cbmZvcih0IGluIGMoMSwgMiwgNCwgOCwgc2VxKDEwLCAxMDAsIGJ5PTEwKSkpe1xuICBiIDwtIGdldFRhaWxlZEdyYXBoKHQpO1xuICBiICU+JSB3cml0ZS5ncmFwaChmaWxlID0gaGVyZShcInNyY1wiLCBcImNwcFwiLCBcImRhdGFcIiwgXCJiYXJhYmFzaVwiLCBwYXN0ZTAodCwgXCJrLmVkZ2VzXCIpKSwgZm9ybWF0ID0gXCJlZGdlbGlzdFwiKVxufVxuYiA8LSBnZXRUYWlsZWRHcmFwaCgyMCk7XG4jIGIgJT4lIHBsb3QodmVydGV4LnNpemU9MC41LCB2ZXJ0ZXgubGFiZWw9TkEpO1xuYGBgIn0= -->
 <pre class="r"><code>getTailedGraph &lt;- function(thousands) {
   b &lt;- barabasi.game(1000*thousands, power = 0.1, m = NULL, out.dist = NULL, out.seq = NULL, out.pref = FALSE, zero.appeal = 1, directed = FALSE,
 algorithm =&quot;psumtree&quot;, start.graph = NULL);
 }
 for(t in c(1, 2, 4, 8, seq(10, 100, by=10))){
   b &lt;- getTailedGraph(t);
-  write.graph(file = here(&quot;src&quot;, &quot;cpp&quot;, &quot;data&quot;, &quot;barabasi&quot;, paste0(t, &quot;k.edges&quot;)), format = &quot;edgelist&quot;)
-}</code></pre>
+  b %&gt;% write.graph(file = here(&quot;src&quot;, &quot;cpp&quot;, &quot;data&quot;, &quot;barabasi&quot;, paste0(t, &quot;k.edges&quot;)), format = &quot;edgelist&quot;)
+}
+b &lt;- getTailedGraph(20);
+# b %&gt;% plot(vertex.size=0.5, vertex.label=NA);</code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiRXJyb3IgaW4gaXNfaWdyYXBoKGdyYXBoKSA6IGFyZ3VtZW50IFwiZ3JhcGhcIiBpcyBtaXNzaW5nLCB3aXRoIG5vIGRlZmF1bHRcbiJ9 -->
-<pre><code>Error in is_igraph(graph) : argument &quot;graph&quot; is missing, with no default</code></pre>
-<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 <!-- rnb-text-end -->
@@ -221,7 +230,7 @@ sample.g %&gt;% gorder</code></pre>
 <!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 
-<div id="rmd-source-code">LS0tCnRpdGxlOiAiR2VuZXJhdGUgc2NhbGUgZnJlZSBuZXR3b3JrcyIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQpgYGB7cn0KZ2V0VGFpbGVkR3JhcGggPC0gZnVuY3Rpb24odGhvdXNhbmRzKSB7CiAgYiA8LSBiYXJhYmFzaS5nYW1lKDEwMDAqdGhvdXNhbmRzLCBwb3dlciA9IDAuMSwgbSA9IE5VTEwsIG91dC5kaXN0ID0gTlVMTCwgb3V0LnNlcSA9IE5VTEwsIG91dC5wcmVmID0gRkFMU0UsIHplcm8uYXBwZWFsID0gMSwgZGlyZWN0ZWQgPSBGQUxTRSwKYWxnb3JpdGhtID0icHN1bXRyZWUiLCBzdGFydC5ncmFwaCA9IE5VTEwpOwp9CmZvcih0IGluIGMoMSwgMiwgNCwgOCwgc2VxKDEwLCAxMDAsIGJ5PTEwKSkpewogIGIgPC0gZ2V0VGFpbGVkR3JhcGgodCk7CiAgYiAlPiUgd3JpdGUuZ3JhcGgoZmlsZSA9IGhlcmUoInNyYyIsICJjcHAiLCAiZGF0YSIsICJiYXJhYmFzaSIsIHBhc3RlMCh0LCAiay5lZGdlcyIpKSwgZm9ybWF0ID0gImVkZ2VsaXN0IikKfQpiIDwtIGdldFRhaWxlZEdyYXBoKDIwKTsKIyBiICU+JSBwbG90KHZlcnRleC5zaXplPTAuNSwgdmVydGV4LmxhYmVsPU5BKTsKYGBgCgpgYGB7cn0Kc2FtcGxlLmcucGF0aDwtaGVyZSgic3JjIiwgImNwcCIsICJkYXRhIiwgInNhbXBsZS5ncmFwaC50eHQiKQpzYW1wbGUuZy5kZiA8LSByZWFkLmNzdjIoc2FtcGxlLmcucGF0aCwgc2VwID0gIlx0IiwgY29tbWVudC5jaGFyID0gIiMiLCBoZWFkZXIgPSBGKQpzYW1wbGUuZyA8LSBncmFwaF9mcm9tX2RhdGFfZnJhbWUoc2FtcGxlLmcuZGYsIGRpcmVjdGVkID0gRikKc2FtcGxlLmcgJT4lIGdvcmRlcgpzYW1wbGUuZyAlPiUgZ3NpemUKc2FtcGxlLmcgJT4lIHBsb3QobGF5b3V0PWxheW91dF9uaWNlbHkpCnNhbXBsZS5nICU+JSBkaXN0YW5jZXMgJT4lIHN1bQoKYGBgCg==</div>
+<div id="rmd-source-code">LS0tCnRpdGxlOiAiR2VuZXJhdGUgc2NhbGUgZnJlZSBuZXR3b3JrcyIKb3V0cHV0OiBodG1sX25vdGVib29rCi0tLQpgYGB7cn0KZ2V0VGFpbGVkR3JhcGggPC0gZnVuY3Rpb24odGhvdXNhbmRzKSB7CiAgYiA8LSBiYXJhYmFzaS5nYW1lKDEwMDAqdGhvdXNhbmRzLCBwb3dlciA9IDAuMSwgbSA9IE5VTEwsIG91dC5kaXN0ID0gTlVMTCwgb3V0LnNlcSA9IE5VTEwsIG91dC5wcmVmID0gRkFMU0UsIHplcm8uYXBwZWFsID0gMSwgZGlyZWN0ZWQgPSBGQUxTRSwKYWxnb3JpdGhtID0icHN1bXRyZWUiLCBzdGFydC5ncmFwaCA9IE5VTEwpOwp9CmBgYAoKYGBge3J9CmxpYnJhcnkoc3RyaW5ncikKZm9yKHQgaW4gYygxLCAyLCA0LCA4LCBzZXEoMTAsIDEwMCwgYnk9MTApKSl7CiAgYiA8LSBnZXRUYWlsZWRHcmFwaCh0KTsKICAKICBiICU+JSB3cml0ZS5ncmFwaChmaWxlID0gaGVyZSgic3JjIiwgImNwcCIsICJkYXRhIiwgImJhcmFiYXNpIiwgcGFzdGUwKHN0cl9wYWQodCwgMywgcGFkID0gIjAiKSwgImsuZWRnZXMiKSksIGZvcm1hdCA9ICJlZGdlbGlzdCIpCn0KYiA8LSBnZXRUYWlsZWRHcmFwaCgyMCk7CiMgYiAlPiUgcGxvdCh2ZXJ0ZXguc2l6ZT0wLjUsIHZlcnRleC5sYWJlbD1OQSk7CmBgYAoKYGBge3J9CnNhbXBsZS5nLnBhdGg8LWhlcmUoInNyYyIsICJjcHAiLCAiZGF0YSIsICJzYW1wbGUuZ3JhcGgudHh0IikKc2FtcGxlLmcuZGYgPC0gcmVhZC5jc3YyKHNhbXBsZS5nLnBhdGgsIHNlcCA9ICJcdCIsIGNvbW1lbnQuY2hhciA9ICIjIiwgaGVhZGVyID0gRikKc2FtcGxlLmcgPC0gZ3JhcGhfZnJvbV9kYXRhX2ZyYW1lKHNhbXBsZS5nLmRmLCBkaXJlY3RlZCA9IEYpCnNhbXBsZS5nICU+JSBnb3JkZXIKc2FtcGxlLmcgJT4lIGdzaXplCnNhbXBsZS5nICU+JSBwbG90KGxheW91dD1sYXlvdXRfbmljZWx5KQpzYW1wbGUuZyAlPiUgZGlzdGFuY2VzICU+JSBzdW0KCmBgYAo=</div>
 
 
 
