@@ -8,8 +8,13 @@
 #include <deque>
 #include <algorithm>
 
+using tailsMap = std::unordered_map<nodeId, std::vector<uint>>;
 
-std::unordered_map<nodeId, std::vector<uint32_t>> cutTails(graph& g);
-uint64_t sspBFStails(const graph& g);
+uint64_t sspBFStails(const mapGraph &g);
+tailsMap transfromTails(tailsMap &tails, transformMap &tr);
+inline uint tailContribution(uint t, uint n, uint64_t ssp);
+uint64_t vertexTailsBFS(vecGraph &g, tailsMap tails, nodeID vid);
+tailsMap cutTails(mapGraph &g);
+
 
 #endif

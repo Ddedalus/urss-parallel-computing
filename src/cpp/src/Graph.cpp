@@ -5,7 +5,7 @@ using namespace std;
 
 // constructors:
 
-vecGraph::vecGraph(mapGraph &g, unordered_map<nodeID, nodeID> &transform) : vecGraph(g.nodes())
+vecGraph::vecGraph(mapGraph &g, transformMap &transform) : vecGraph(g.nodes())
 {
 	transform.reserve(g.nodes());
 	nodeID counter = 0;
@@ -25,7 +25,7 @@ vecGraph::vecGraph(mapGraph &g, unordered_map<nodeID, nodeID> &transform) : vecG
 
 vecGraph::vecGraph(mapGraph &g)
 {
-	unordered_map<nodeID, nodeID> transform;
+	transformMap transform;
 	transform.reserve(g.nodes());
 	nodeID counter = 0;
 	for (auto &pair : g)

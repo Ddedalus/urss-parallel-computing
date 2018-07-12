@@ -6,6 +6,7 @@
 
 using nodeID = uint;
 using Node = std::vector<nodeID>;
+using transformMap = std::unordered_map<nodeID, nodeID>;
 // if needed, vector property table may be added later.
 class Graph
 {
@@ -28,7 +29,7 @@ public:
     vecGraph(uint size) : Graph(), adj_list(size){
         no_edges = 0;
     }
-    vecGraph(mapGraph& g, std::unordered_map<nodeID, nodeID>& transform);
+    vecGraph(mapGraph& g, transformMap& transform);
     vecGraph(mapGraph& g);
     uint nodes() const override {   return adj_list.size();  }
     std::vector<nodeID>& operator[](nodeID pos) override {
