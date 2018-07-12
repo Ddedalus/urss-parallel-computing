@@ -2,28 +2,32 @@
 
 using namespace std;
 
-int RecordWriter::getNextID(RunRecord run){
+int RecordWriter::getNextID(RunRecord& run){
     //checkFiles();
     unsigned int c;
     counterfile.seekg(0);
-    counterfile >> c;
+    if(!(counterfile >> c))
+        cout<<"Cant read index file!!!"<<endl;
     counterfile.seekp(0); c++;
     counterfile << c << "\n";
+    counterfile.flush();
     return c;
 }
 
 void RecordWriter::checkFiles(){
     if(!counterfile.good()){
-        throw "Can't access counter file!";
+        cout<< "Can't access counter file!";
+        throw "";
     }
     
     if (!file.good()){
-        throw "Can't access output file!";
+        cout<< "Can't access output file!";
+        throw "";
     }
     // cout<< "check passed\n";
 }
 
-bool RecordWriter::checkRecordCorrect(RunRecord run){
+bool RecordWriter::checkRecordCorrect(RunRecord& run){
     if(header.size() == 0)
         return true;
     
@@ -70,7 +74,7 @@ RecordWriter::~RecordWriter(){
     counterfile.close();
 }
 
-string RecordWriter::getString(RunRecord run){
+string RecordWriter::getString(RunRecord& run){
     string ret = "";
     for(auto pair : run.columns)
         if(pair.second == "")
@@ -81,14 +85,14 @@ string RecordWriter::getString(RunRecord run){
     return ret;
 }
 
-string RecordWriter::getHeader(RunRecord run){
+string RecordWriter::getHeader(RunRecord& run){
     string ret = "_id";
     for(auto el : run.columns)
         ret += delim + el.first;
     return ret + '\n';
 }
 
-void RecordWriter::write(RunRecord run){
+void RecordWriter::write(RunRecord& run){
     checkFiles();
     if(header.size() == 0){ // need to wirte a new header, run is correct by definition
         file << getHeader(run);
@@ -100,8 +104,9 @@ void RecordWriter::write(RunRecord run){
             file<<getString(run);   
         }       
     }
+    file.flush();
 }
 
-std::string RecordWriter::run_counter_path = "output/couter.txt";
-std::string RecordWriter::instance_counter_path = "data/couter.txt";
-std::string RecordWriter::na= "";
+std::string RecordWriter::run_counter_path = "../output/run_id.txt";
+std::string RecordWriter::instance_counter_path = "../data/couter.txt";
+std::string RecordWriter::na= "dupa";

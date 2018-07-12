@@ -46,10 +46,10 @@ private:
      * 
      * @return int 32-bit unsigned counter
      */
-    int getNextID(RunRecord run); // counter file is selected on object creation
+    int getNextID(RunRecord& run); // counter file is selected on object creation
     // int getNextID(InstanceRecord inst);
     void checkFiles();  // throws an exception if file access failed
-    bool checkRecordCorrect(RunRecord run);  //if the file has a header, it must match with any new record
+    bool checkRecordCorrect(RunRecord& run);  //if the file has a header, it must match with any new record
     // bool checkRecordCorrect(InstanceRecord run);
 public:
     std::vector<std::string> getFileHeader();   //returns empty vector if no valid header is found
@@ -70,20 +70,20 @@ public:
      *  
      * @return std::string "$(ID)$(delim)" would be appended to the front of this and written to file.
      */
-    std::string getString(RunRecord run);   
+    std::string getString(RunRecord& run);   
     //TODO: std::string getString(InstanceRecord instance);
 
     /**
      * @brief Peek what would be a header for this Record.
      */
-    std::string getHeader(RunRecord run);
+    std::string getHeader(RunRecord& run);
 
     /**
      * @brief Append a single record to the file.
      * If this is the first record in a file, header is generated and written first.
      * If a header already exists and is not compatible with the Record, a RowNameException is thrown.
      */
-    void write(RunRecord run);
+    void write(RunRecord& run);
 
 };
 

@@ -19,7 +19,7 @@ RunRecord::RunRecord(std::vector<std::string> columnNames){
 
 RunRecord::RunRecord(std::vector<std::string> columnNames, std::vector<std::string> defaults){
     if(columnNames.size() != defaults.size())
-        throw "You must specify the same number of columns and default values";
+        std::cout<< "You must specify the same number of columns and default values";
 
     for(auto i = 0; i < columnNames.size(); i++){
         columns[columnNames[i]] = defaults[i];
