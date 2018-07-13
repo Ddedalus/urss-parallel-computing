@@ -82,3 +82,5 @@ src/cpp/output/
 
 src/cpp/release/
 src/cpp/data/**/*
+
+data/
