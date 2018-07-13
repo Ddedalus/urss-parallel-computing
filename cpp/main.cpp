@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 {
 
     string outPath("../output/o1.csv");
-    string inputPath("../data/barabasi/");
+    string inputPath("../../data/barabasi/");
 
     cout<<"Record writer counter: "<< RecordWriter::run_counter_path <<endl;
     RecordWriter rw(outPath);
