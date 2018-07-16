@@ -6,10 +6,11 @@
 #include <map>
 #include <fstream>
 
-// timestamp handling
-#include <iomanip>
-#include <ctime>
-#include <sstream>
+// timestamp through bash date
+#include <cstdio>
+#include <memory>
+#include <stdexcept>
+#include <array>
 
 class RowNameException: public std::exception{
   virtual const char* what() const throw()
