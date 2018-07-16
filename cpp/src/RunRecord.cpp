@@ -1,12 +1,24 @@
 #include "RunRecord.h"
 
+std::string exec(const char* cmd) {
+    std::array<char, 128> buffer;
+    std::string result;
+    std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
+    if (! system(nullptr))
+        exit (EXIT_FAILURE);
+    
+    if (!pipe) throw std::runtime_error("popen() failed!");
+    while (!feof(pipe.get())) {
+        if (fgets(buffer.data(), 128, pipe.get()) != nullptr)
+            result += buffer.data();
+    }
+    if(result.back() == '\n')
+        result.pop_back();
+    return result;
+}
+
 std::string RunRecord::getTimestamp(){
-    auto t = std::time(nullptr);
-    auto tm = *std::localtime(&t);
-    std::ostringstream oss;
-    oss << std::put_time(&tm, "%d-%m-%Y %H-%M-%S");
-    //Todo: customise format to suit R best
-    return oss.str();
+    return exec("date '+%Y-%m-%d %H:%M:%S'");
 }
 
 

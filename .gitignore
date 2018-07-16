@@ -56,7 +56,6 @@ external/
 
 cpp/build/
 cpp/main
-cpp/tests
 
 #vscode config
 cpp/.vscode/

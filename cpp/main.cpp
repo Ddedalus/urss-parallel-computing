@@ -31,19 +31,21 @@ void read_directory(string inputPath, vector<string> &names)
 
 int main(int argc, char *argv[])
 {
+    if(argc < 2)
+        return 1;
+    
+    string outPath("../output/joshua.csv");
+    string inputPath(argv[1]);
 
-    string outPath("../output/o1.csv");
-    string inputPath("../../data/barabasi/");
-
-    cout<<"Record writer counter: "<< RecordWriter::run_counter_path <<endl;
+    cout<<"Record writer counter:\t"<< RecordWriter::run_counter_path <<endl;
     RecordWriter rw(outPath);
     vector<string> inputNames;
     read_directory(inputPath, inputNames);
     Timer t;
     map<string, string> c = {
-        {"algorithm", "bitset"},
+        {"algorithm", "tailsBFS"},
         {"threads", "1"},
-        {"machine", "dell"},
+        {"machine", "joshua"},
         {"graphRepresentation", "map"},
         {"graphType", "barabasi"}};
     cout<<"c="<<c<<endl;
@@ -52,11 +54,29 @@ int main(int argc, char *argv[])
         RunRecord r(c);
         mapGraph mg;
         readGraph(mg, inputPath + p);
-        t.start("Bitset: " + p);
+        r["instance"] = p;
+        r["nodes"] = to_string(mg.nodes());
+        r["edges"] = to_string(mg.edges());
+
+        r["algorithm"] = "tails";
+        t.start("Tails:\t" + p);
+        sspBFStails(mg);
+        r["runtime"] = to_string(t.getElapsed());
+        t.print();
+        rw.write(r);
+
+        r["algorithm"] = "bfs";
+        t.start("BFS:\t" + p);
+        sspBFS(mg);
+        r["runtime"] = to_string(t.getElapsed());
+        t.print();
+        rw.write(r);
+
+        r["algorithm"] = "bitset";
+        t.start("Bitset:\t" + p);
         sspBitset(mg);
         r["runtime"] = to_string(t.getElapsed());
         t.print();
-        r["instance"] = p;
         rw.write(r);
     }
 
