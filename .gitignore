@@ -64,3 +64,17 @@ cpp/.vscode/
 data/
 
 bfg.jar
+
+java/\.settings/
+
+java/\.vscode/
+
+java/bin/
+
+java/target/
+
+java/\.classpath
+
+java/\.project
+
+cpp-workspace\.code-workspace
