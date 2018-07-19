@@ -1,0 +1,40 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+sample.barabasi <- read.csv2(here("data", "barabasi", "001k.edges"), sep = " ", comment.char = "#", header = F)
+b001k <- graph_from_data_frame(sample.barabasi, directed = F)
+
+fb.csv <- read.csv2(here("data", "downloads", "socfb-Berkeley13.mtx"), header = F, sep=" ")
+fb <- graph_from_data_frame(fb.csv, directed = F)
+
+n5 <- bspLib::readPOETSGraph(here("data", "newcastle", "n5.edges"));
+```
+
+```{r}
+remove_isolated_nodes <- function(g) {
+  delete.vertices(g, which((g %>% degree) == 0))
+}
+```
+
+```{r}
+removeMostConnected <- function(graph, how_many) {
+  g <- delete.vertices(graph, graph %>% degree %>% order(decreasing = T) %>% head(how_many))
+  g %<>% remove_isolated_nodes 
+  message("Removed lonely: " %>% paste0(graph %>% gorder - g%>% gorder  - how_many ))
+  g
+}
+```
+
+```{r}
+n5 %>% removeMostConnected(1000) %>% components() %$% csize
+n5 %>% largest.cliques %>% lapply(FUN = length)
+mc <- n5 %>% max_cliques(min=42) %>% Reduce(f = union)
+n5 %>% delete.vertices(mc) %>% remove_isolated_nodes %>% components() %$% csize
+```
+
+```{r}
+cluster_edge_betweenness(n5,edge.betweenness = T,
+```
+
