@@ -14,6 +14,7 @@ message("CMAKE_CXX_FLAGS is ${CMAKE_CXX_FLAGS}")
 
 add_library(myLib SHARED "")
 include(src/CMakeLists.txt)
+target_compile_options(myLib PUBLIC "$<$<CONFIG:DEBUG>:-O3>")
 install(TARGETS myLib DESTINATION lib)
 
 add_library(testLib SHARED "")
