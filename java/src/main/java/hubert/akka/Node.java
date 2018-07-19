@@ -38,7 +38,6 @@ public class Node extends AbstractActor {
 
   private ArrayList<ActorRef> neigh;
   private int dist = Integer.MAX_VALUE;
-  private int propagated = dist;
   private boolean has_propagated = true;
   private ActorRef supervisor;
 
