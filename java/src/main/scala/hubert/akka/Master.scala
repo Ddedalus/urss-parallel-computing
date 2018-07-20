@@ -82,10 +82,12 @@ class Master(filename: String) extends Actor with ActorLogging {
     }
   }
 
+  var times_ful = 0
   private def onGatherResults(): Unit = {
     if (this.finishedCount == all_nodes.size)
       log.warning(
-        "Sum of shortes paths: " + all_nodes.foldLeft(0.0)(_ + _._2.distance))
+        times_ful + "th ssp: " + all_nodes.foldLeft(0.0)(_ + _._2.distance))
+      times_ful += 1
   }
 
   def receive = {
