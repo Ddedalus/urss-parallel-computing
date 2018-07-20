@@ -17,7 +17,7 @@ import hubert.akka.Node.Neighbours;
 import hubert.akka.Node.DistanceEstimate;
 
 public class Master extends AbstractActor {
-	static public Props props(String filename) {
+    static public Props props(String filename) {
 		return Props.create(Master.class, () -> new Master(filename));
 	}
 
@@ -157,10 +157,12 @@ public class Master extends AbstractActor {
 
 	private void onGatherResults() {
 		Double sum = 0.;
-		if (finishedCount == all_nodes.size())
+		if (this.finishedCount == all_nodes.size()){
+
 			for (NodeInfo ni : all_nodes.values()) {
 				sum += ni.distance;
 			}
+		}
 		log.warning("Sum of shortes paths: " + sum);
 	}
 
