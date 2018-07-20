@@ -41,7 +41,7 @@ class Master(filename: String) extends Actor with ActorLogging {
       .map({ case (id, neigh) => id.toInt -> neigh.map(_.toInt) })
 
   import scala.runtime.ScalaRunTime._
-  log.warning("Graph: \n" + stringOf(graph))
+  // log.warning("Graph: \n" + stringOf(graph))
 
   var idToNode: scala.collection.Map[Int, ActorRef] = _
 
