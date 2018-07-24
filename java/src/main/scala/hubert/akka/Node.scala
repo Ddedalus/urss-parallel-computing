@@ -9,20 +9,20 @@ import scala.collection.JavaConversions._
 
 object Node {
 
-  def props(src: Int): Props = Props(new Node(src))
+  def props: Props = Props(new Node())
 
   final case class Neighbours(neighbours: Array[ActorRef])
 
   final case class DistanceEstimate(distance: Double)
 
-  final case class NewSource(sourceId: Int)
+  final case class NewSource(sourceId: ActorRef)
 
   case object AskDistance
 
   case object Propagate
 }
 
-class Node(src: Int) extends Actor {
+class Node() extends Actor {
   import hubert.akka.Master.{NotFinished, UpdateEstimate}
   import Node._
 
@@ -30,8 +30,7 @@ class Node(src: Int) extends Actor {
   private var dist: Double = Double.MaxValue
   private var has_propagated: Boolean = true
   private var supervisor: ActorRef = _
-  private var source = src
-
+  private var source = ActorRef.noSender
 
   def onDistanceEstimate(distance: Double): Unit = {
     if (distance >= this.dist) return
@@ -41,7 +40,7 @@ class Node(src: Int) extends Actor {
     context.parent ! NotFinished
     self ! Node.Propagate
     this.has_propagated = false
-    
+
   }
 
   def onPropagate(): Unit = {
@@ -52,10 +51,14 @@ class Node(src: Int) extends Actor {
     self ! AskDistance
   }
 
-  def onNewSource(src: Int): Unit = {
-    this.dist = Double.MaxValue
+  def onNewSource(src: ActorRef): Unit = {
+    if (this.source == src) return;
     this.has_propagated = true
     this.source = src
+    neigh.foreach(n => n ! NewSource(this.source))
+    this.dist = Double.MaxValue;
+    if (this.source == self)
+      self ! DistanceEstimate(0.0)
   }
 
   def receive = {

@@ -13,9 +13,9 @@ compileOrder := CompileOrder.JavaThenScala
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
 )
-libraryDependencies ++= Seq(
-  "io.kamon" %% "kamon-core" % "1.0.1",
-  "io.kamon" %% "kamon-akka-2.5" % "1.0.1",
-  "io.kamon" %% "kamon-prometheus" % "1.0.0")
+// libraryDependencies ++= Seq(
+//  "io.kamon" %% "kamon-core" % "1.0.1",
+//  "io.kamon" %% "kamon-akka-2.5" % "1.0.1",
+//  "io.kamon" %% "kamon-prometheus" % "1.0.0")
 
 fork in run := true

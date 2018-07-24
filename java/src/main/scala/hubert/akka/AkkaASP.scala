@@ -7,16 +7,17 @@ import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 
 object AkkaASP extends App {
   import hubert.akka.Master._
+  import hubert.akka.BulkMaster._
 
   // Kamon.addReporter(new PrometheusReporter())
   // println(System.getenv());
   // Kamon.addReporter(new ZipkinReporter())
 
-  val filename = "/home/hubert/Code/Warwick/BSP/data/newcastle/n5.edges"
+  val filename = "/home/hubert/Code/Warwick/BSP/data/sample/sample.graph.txt"
   val system: ActorSystem = ActorSystem("asp")
 
-  val master = system.actorOf(Master.props(filename), "master")
+  val master = system.actorOf(BulkMaster.props(filename), "master")
   println(master)
-  master ! RequestASP(2)
+  master ! RequestBulk
   System.in.read();
 }
