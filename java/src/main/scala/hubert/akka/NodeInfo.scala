@@ -1,4 +1,4 @@
-package huber.akka
+package hubert.akka
 
 class NodeInfo(var id: Int) {
     var finished: Boolean = false
