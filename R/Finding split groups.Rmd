@@ -35,6 +35,7 @@ n5 %>% delete.vertices(mc) %>% remove_isolated_nodes %>% components() %$% csize
 ```
 
 ```{r}
-cluster_edge_betweenness(n5,edge.betweenness = T,
+n5 %>% V %>% sample(100) %>% lapply(function(x) paste0("\"asp/user/master/node-", x)) %>% paste0(sep = "\",\n") %>% cat
+
 ```
 
