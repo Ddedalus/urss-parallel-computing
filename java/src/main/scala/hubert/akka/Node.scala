@@ -11,7 +11,7 @@ object Node {
 
   def props: Props = Props(new Node())
 
-  final case class Neighbours(neighbours: Array[ActorRef])
+  final case class Neighbours(neighbours: Array[Int])
 
   final case class DistanceEstimate(distance: Double)
 
