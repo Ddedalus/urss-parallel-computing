@@ -1,6 +1,6 @@
 package hubert.akka
 
-import akka.actor.{Timers, Actor, ActorLogging, ActorRef, Props}
+import akka.actor.{Timers, Actor, ActorLogging, ActorRef, Props, PoisonPill}
 import scala.concurrent.duration._
 
 object Master {
@@ -18,6 +18,8 @@ class Master(filename: String)
   import Master._
   import hubert.akka.Node._
 
+  timers.startSingleTimer(PoisonPill, PoisonPill, 10.seconds)
+
   def onRequestASP(source: Int): Unit = {
     this.source = this.nodesRef(source)
     this.source ! NewSource(this.source)
@@ -25,7 +27,6 @@ class Master(filename: String)
 
   def onUpdateEstimate(dist: Double, source: ActorRef): Unit = {
     if (source != this.source) {
-                  source.path,
       log.warning("Estimate on a wrong source: {}, instead of {}",
                   this.source.path)
       return
@@ -44,16 +45,20 @@ class Master(filename: String)
       log.info("SSP of {} = {}", source.path, sum)
   }
 
+  override def postStop(){
+    context.system.terminate
+  }
+
   override def receive = super.receive orElse {
     case msg: RequestASP => {
       if (graph != null) {
         timers.startSingleTimer(NotFinished, msg, 500.millis)
+        log.warning("Not ready to accept Request yet...")
       } else
         onRequestASP(msg.source)
     }
     case UpdateEstimate(dist, src) => onUpdateEstimate(dist, src)
     case NotFinished               => notFinished(sender)
     case GatherResults => onGatherResults
-
   }
 }
