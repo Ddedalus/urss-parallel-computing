@@ -6,7 +6,7 @@ import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 // import kamon.prometheus.PrometheusReporter
 
 object AkkaASP extends App {
-  import hubert.akka.Master._
+  import hubert.akka.BulkMaster._
 
   // Kamon.addReporter(new PrometheusReporter())
   // Kamon.addReporter(new ZipkinReporter())
@@ -15,6 +15,6 @@ object AkkaASP extends App {
   val filename = "/home/hubert/Code/Warwick/BSP/data/newcastle/n3.edges"
   val system: ActorSystem = ActorSystem("asp")
 
-  val master = system.actorOf(Master.props(filename), "master")
-  master ! RequestASP(2)
+  val master = system.actorOf(BulkMaster.props(filename), "master")
+  master ! RequestBulk
 }

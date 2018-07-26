@@ -31,19 +31,18 @@ class Supervisor(nodes: Array[Int])
       cleanInfo()
     }
     updateEstimate(dist, sender)
-    // log.info("{} status: {}/{}", self.path.toString.split("/").last, finishedCount, children.size)
-    if (finishedCount == children.size){
+    if (finishedCount == children.size) {
       self ! GatherResults
     }
   }
 
   def onNotFinished(): Unit = {
-    if(finishedCount == children.size)
+    if (finishedCount == children.size)
       context.parent ! NotFinished
     notFinished(sender)
   }
 
-  def onGatherResults(){
+  def onGatherResults() {
     if (this.finishedCount == children.size) {
       context.parent ! UpdateEstimate(sumResults, source)
     } else {
@@ -53,9 +52,17 @@ class Supervisor(nodes: Array[Int])
 
   }
 
+  def onNewSource(src: ActorRef) {
+    source = src
+    sender ! true
+    cleanInfo
+  }
+
   def receive = {
     case UpdateEstimate(dist, src) => onUpdateEstimate(dist, src)
-    case NotFinished => onNotFinished
-    case GatherResults => onGatherResults
+    case NotFinished               => onNotFinished
+    case GatherResults             => onGatherResults
+    case Node.NewSource(src)            => onNewSource(src)
+
   }
 }

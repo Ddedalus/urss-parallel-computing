@@ -18,7 +18,7 @@ class Master(filename: String)
   import Master._
   import hubert.akka.Node._
 
-  timers.startSingleTimer(PoisonPill, PoisonPill, 10.seconds)
+  timers.startSingleTimer(PoisonPill, PoisonPill, 20.seconds)
 
   def onRequestASP(source: Int): Unit = {
     this.source = this.nodesRef(source)
@@ -37,12 +37,13 @@ class Master(filename: String)
       self ! GatherResults
   }
 
-  def onGatherResults() {
+  def onGatherResults() : Double = {
     val sum = sumResults
     if (sum == -1.0)
       log.warning("Updates arrived after all reported finish!")
     else
       log.info("SSP of {} = {}", source.path, sum)
+    return sum
   }
 
   override def postStop(){
