@@ -4,7 +4,11 @@ version := "1.0"
 
 scalaVersion := "2.12.6"
 
-lazy val akkaVersion = "2.5.8"
+lazy val akkaVersion = "2.5.14"
+
+// using ~compile will clean the screen first and display only top 5 errors
+maxErrors := 5
+triggeredMessage := Watched.clearWhenTriggered
 
 cancelable in Global := true
 

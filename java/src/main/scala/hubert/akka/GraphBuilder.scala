@@ -1,6 +1,6 @@
 package hubert.akka
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 
 //remove if not needed
 import scala.collection.JavaConverters._
@@ -31,7 +31,8 @@ class GraphBuilder(filename: String) extends Actor with ActorLogging {
 
   var children: Map[ActorRef, NodeInfo] = _
   var nodesRef: Map[Int, ActorRef] = _
-  var finishedCount: Int = _
+  var childrenCount: Int = _
+  var outside: ActorRef = ActorRef.noSender
 
   if (graph.size < branching) {
     log.info("No supervision needed")
@@ -55,8 +56,8 @@ class GraphBuilder(filename: String) extends Actor with ActorLogging {
       nodesRef = refs
     else
       nodesRef = nodesRef ++ refs;
-    finishedCount += 1
-    if (finishedCount == children.size) {
+    childrenCount += 1
+    if (childrenCount == children.size) {
       self ! BuildGraph
     }
   }

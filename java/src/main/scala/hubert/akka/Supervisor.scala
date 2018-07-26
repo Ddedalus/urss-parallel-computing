@@ -4,43 +4,58 @@ import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 
 object Supervisor {
   def props(nodes: Array[Int]): Props = Props(new Supervisor(nodes))
+
+  case object GatherResults
 }
 
-class Supervisor(nodes: Array[Int]) extends Actor with ActorLogging {
+class Supervisor(nodes: Array[Int])
+    extends Actor
+    with AnswerCollecting
+    with ActorLogging {
   import Supervisor._
-  import hubert.akka.Node.{Neighbours, DistanceEstimate, NewSource}
+  import hubert.akka.Node.{Neighbours, DistanceEstimate, NewSource, AskDistance}
   import hubert.akka.GraphBuilder.{NodesCreated}
+  import hubert.akka.Master.{UpdateEstimate, NotFinished}
 
-  var children: Map[ActorRef, NodeInfo] = nodes.map{
-    id => context.actorOf(Node.props, "n" + id) -> new NodeInfo(id)
+  var children: Map[ActorRef, NodeInfo] = nodes.map { id =>
+    context.actorOf(Node.props, "n" + id) -> new NodeInfo(id)
   }.toMap
 
-  val tmp = children.map{
+  context.parent ! NodesCreated(children.map {
     case (ref, info) => info.id -> ref
-  }.toMap
-  context.parent ! NodesCreated(tmp)
+  }.toMap)
 
-  // def onNotFinished(): Unit = {
-  //   if (this.all_nodes(sender()).finished) {
-  //     this.finishedCount -= 1
-  //     this.all_nodes(sender()).finished = false
-  //   }
-  // }
+  def onUpdateEstimate(dist: Double, source: ActorRef): Unit = {
+    if (source != this.source) {
+      this.source = source
+      cleanInfo()
+    }
+    updateEstimate(dist, sender)
+    // log.info("{} status: {}/{}", self.path.toString.split("/").last, finishedCount, children.size)
+    if (finishedCount == children.size){
+      self ! GatherResults
+    }
+  }
 
-  // def onGatherResults(): Double = {
-  //   if (this.finishedCount == all_nodes.size) {
-  //     val sum = all_nodes.foldLeft(0.0)(_ + _._2.distance)
-  //     log.info("SSP for " + sourceID.path + ": " + sum)
-  //     return sum;
-  //   } else {
-  //     log.warning("Updates arrived after all reported finish!");
-  //     return -1;
-  //   }
+  def onNotFinished(): Unit = {
+    if(finishedCount == children.size)
+      context.parent ! NotFinished
+    notFinished(sender)
+  }
 
-  // }
+  def onGatherResults(){
+    if (this.finishedCount == children.size) {
+      context.parent ! UpdateEstimate(sumResults, source)
+    } else {
+      log.warning("Updates arrived after all reported finish!");
+      return;
+    }
+
+  }
 
   def receive = {
-    case Some(o) => log.info("Unrecognised" + o.toString)
+    case UpdateEstimate(dist, src) => onUpdateEstimate(dist, src)
+    case NotFinished => onNotFinished
+    case GatherResults => onGatherResults
   }
 }
-
