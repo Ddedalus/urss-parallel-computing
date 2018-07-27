@@ -25,10 +25,15 @@ class Supervisor(nodes: Array[Int])
     case (ref, info) => info.id -> ref
   }.toMap)
 
+  var previousSource : ActorRef = _
+
   def onUpdateEstimate(dist: Double, source: ActorRef): Unit = {
     if (source != this.source) {
-      this.source = source
-      cleanInfo()
+      if(source == previousSource)
+        log.warning("Estimate on previous source")
+      else
+        log.warning("Estimate for {}; {} expected.", source.path.name, this.source.path.name)
+      return;
     }
     updateEstimate(dist, sender)
     if (finishedCount == children.size) {
@@ -46,13 +51,16 @@ class Supervisor(nodes: Array[Int])
     if (this.finishedCount == children.size) {
       context.parent ! UpdateEstimate(sumResults, source)
     } else {
-      log.warning("Updates arrived after all reported finish!");
+      // log.warning("Updates arrived after all reported finish!");
       return;
     }
 
   }
 
   def onNewSource(src: ActorRef) {
+    if(source == null)
+      source = src
+    previousSource = source
     source = src
     sender ! true
     cleanInfo

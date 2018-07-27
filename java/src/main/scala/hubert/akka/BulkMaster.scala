@@ -8,35 +8,45 @@ import akka.actor.{
   Props,
   PoisonPill
 }
-import akka.pattern.ask
-import scala.concurrent.duration.{_}
-import scala.concurrent._
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 import ExecutionContext.Implicits.global
-import akka.util.Timeout
 import scala.util.{Success, Failure}
-import scala.concurrent.Future
+
+import akka.util.Timeout
+import akka.pattern.ask
 
 object BulkMaster {
   def props(filename: String): Props = Props(new BulkMaster(filename))
 
   case object RequestBulk
 }
+
 class BulkMaster(filename: String) extends Master(filename) {
   import BulkMaster._
   import hubert.akka.Supervisor._
 
   var idIter: Iterator[ActorRef] = _;
+  var newSource : ActorRef = _
   var grandTotal: Double = _;
   var gatherCounter: Int = 0;
 
   def proclaimNewSource() {
     if (idIter.hasNext) {
-      this.source = idIter.next
+      this.newSource = idIter.next
       implicit val timeout = Timeout(5 seconds)
-      val futures = children.keys.map { _ ? Node.NewSource(source) }
+      val futures = children.keys.map { _ ? Node.NewSource(newSource) }
       Future.sequence(futures).onComplete {
-        case Success(list) => source ! Node.NewSource(this.source)
-        case Failure(e)    => log.warning("Propagating new source timed out")
+        case Success(list) => {
+          log.info("New source {}", newSource.path.name)
+          self ! Node.NewSource(this.newSource)
+          this.newSource ! Node.NewSource(this.newSource)
+          
+        }
+        case Failure(e)    => {
+          log.warning("Propagating new source timed out")
+          self ! PoisonPill
+        }
       }
     } else {
       log.warning("Grand total: {}", grandTotal)
@@ -53,7 +63,7 @@ class BulkMaster(filename: String) extends Master(filename) {
 
   override def onGatherResults(): Double = {
     if (gatherCounter > 1) {
-      log.info("Gather counter {}", gatherCounter)
+      // log.info("Gather counter {}", gatherCounter)
       gatherCounter -= 1
       return -1
     } else {
@@ -76,5 +86,6 @@ class BulkMaster(filename: String) extends Master(filename) {
         proclaimNewSource
       }
     }
+    case Node.NewSource(src) => this.source = src
   }
 }

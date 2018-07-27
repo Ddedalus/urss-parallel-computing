@@ -18,7 +18,7 @@ class Master(filename: String)
   import Master._
   import hubert.akka.Node._
 
-  timers.startSingleTimer(PoisonPill, PoisonPill, 20.seconds)
+  timers.startSingleTimer(PoisonPill, PoisonPill, 50.seconds)
 
   def onRequestASP(source: Int): Unit = {
     this.source = this.nodesRef(source)
@@ -28,7 +28,7 @@ class Master(filename: String)
   def onUpdateEstimate(dist: Double, source: ActorRef): Unit = {
     if (source != this.source) {
       log.warning("Estimate on a wrong source: {}, instead of {}",
-                  this.source.path)
+                  source.path.name, this.source.path.name)
       return
     }
     updateEstimate(dist, sender)
@@ -61,5 +61,6 @@ class Master(filename: String)
     case UpdateEstimate(dist, src) => onUpdateEstimate(dist, src)
     case NotFinished               => notFinished(sender)
     case GatherResults => onGatherResults
+    case PoisonPill => log.warning("System timed out")
   }
 }
