@@ -7,18 +7,22 @@ object Master {
   def props(filename: String): Props = Props(new Master(filename))
   final case class RequestASP(source: Int)
   final case class UpdateEstimate(distance: Double, source: ActorRef)
-  case object GatherResults
   case object NotFinished
+  final case class CorrectBy(diff: Double, source: ActorRef)
 }
+
+
 
 class Master(filename: String)
     extends GraphBuilder(filename)
     with AnswerCollecting
+    with Gathering
     with Timers {
   import Master._
   import hubert.akka.Node._
 
-  timers.startSingleTimer(PoisonPill, PoisonPill, 50.seconds)
+  timers.startSingleTimer(PoisonPill, PoisonPill, 20.seconds)
+
 
   def onRequestASP(source: Int): Unit = {
     this.source = this.nodesRef(source)
@@ -28,25 +32,31 @@ class Master(filename: String)
   def onUpdateEstimate(dist: Double, source: ActorRef): Unit = {
     if (source != this.source) {
       log.warning("Estimate on a wrong source: {}, instead of {}",
-                  source.path.name, this.source.path.name)
+                  source.path.name,
+                  this.source.path.name)
       return
     }
     updateEstimate(dist, sender)
 
-    if (finishedCount == children.size)
-      self ! GatherResults
+    if (allFinished)
+      setGather(self)
   }
 
-  def onGatherResults() : Double = {
-    val sum = sumResults
-    if (sum == -1.0)
-      log.warning("Updates arrived after all reported finish!")
+  def onCorrectBy(diff: Double, source: ActorRef) {
+    if (source == this.source)
+      correctBy(diff, sender)
     else
-      log.info("SSP of {} = {}", source.path, sum)
-    return sum
+      log.warning("Correction from a wrong source")
+    if (allFinished) {
+      setGather(self)
+    }
   }
 
-  override def postStop(){
+  def onLastGather(): Unit = if (allFinished) {
+    log.info("SSP of {} = {}", source.path.name, sumResults)
+  }
+  
+  override def postStop() {
     context.system.terminate
   }
 
@@ -59,8 +69,9 @@ class Master(filename: String)
         onRequestASP(msg.source)
     }
     case UpdateEstimate(dist, src) => onUpdateEstimate(dist, src)
+    case CorrectBy(diff, src)      => onCorrectBy(diff, src)
     case NotFinished               => notFinished(sender)
-    case GatherResults => onGatherResults
-    case PoisonPill => log.warning("System timed out")
+    case GatherResults             => onGather(() => onLastGather())
+    case PoisonPill                => log.warning("System timed out")
   }
 }

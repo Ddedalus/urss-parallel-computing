@@ -1,5 +1,6 @@
 name := "akka-asp"
 
+scalacOptions += "-deprecation"
 version := "1.0"
 
 scalaVersion := "2.12.6"
@@ -16,6 +17,7 @@ compileOrder := CompileOrder.JavaThenScala
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "ch.qos.logback" % "logback-classic" % "1.2.3"
 )
 libraryDependencies ++= Seq(
  "io.kamon" %% "kamon-core" % "1.0.1",
