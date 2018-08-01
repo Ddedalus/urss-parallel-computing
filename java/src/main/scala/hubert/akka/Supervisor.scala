@@ -27,51 +27,30 @@ class Supervisor(nodes: Array[Int])
   var children: Array[ActorRef] = nodes.map(
     id => context.actorOf(Node.props, "n" + id))
 
-  context.parent ! NodesCreated(children.map {
-    case (ref, info) => info.id -> ref
-  }.toMap)
-
-  var previousSource: ActorRef = _
-
-  def onNewSource(src: ActorRef) {
-    if (source == null)
-      source = src
-    previousSource = source
-    source = src
-    cleanInfo; resetCorrections
-    implicit val timeout = Timeout(2 seconds)
-    val futures = children.keys.map(_ ? Node.NewSource(source))
-    Future.sequence(futures).onComplete {
-      case Success(list) => ;
-      case Failure(e) =>
-        log.error("Failed to establish new source: " + e.toString)
-    }
-    sender ! true
-  }
+  context.parent ! NodesCreated(nodes.zip(children).toMap)
 
   def onCorrectBy(diff: Double, source: ActorRef) {
-    if (source == this.source) {
-      correctBy(diff, sender)
+    if (statusses.contains(source)) {
+      correctBy(diff, source,  sender)
       // log.info("Node {} corrected by {}", sender.path.name, diff)
     } else {
       log.warning("Correction from a wrong source")
       context.parent ! CorrectBy(diff, source) // bubble this up immediately for an ammendment on master
     }
-    if (allFinished) {
-      setGather(self)
-    }
   }
 
-  def onNotFinished(): Unit = {
-    val was_finished = allFinished
-    notFinished(sender)
-    if (was_finished && !allFinished) {
-      context.parent ! NotFinished
-    }
+  override def onAllFinished(src : ActorRef){
+    super.onAllFinished(src)
+    setGather(self)
+  }
+
+  override def onFinishRevoked(src : ActorRef){
+    super.onFinishRevoked(src)
+    context.parent ! NotFinished(src)
   }
 
   def onLastGather(): Unit = {
-    if (allFinished && shouldSendCorrection(sumResults)) {
+    if () {
       log.info("Corrected parrent with {}", sumResults)
       context.parent ! CorrectBy(getCorrection(sumResults), source)
     } // on LastGather()

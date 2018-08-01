@@ -45,14 +45,6 @@ class Node() extends Actor with SendingCorrections with ActorLogging {
   private var neigh: Array[ActorRef] = _
   private var distances: Map[ActorRef, NodeStatus] = _
 
-  // def onNewSource(src: ActorRef) {
-  //   source = src
-  //   sender ! true
-  //   dist = Double.MaxValue
-  //   has_propagated = true
-  //   resetCorrections
-  // }
-
   def onSwapSources(newSrc: ActorRef, odlSrc: ActorRef) {
     if (odlSrc != ActorRef.noSender && distances.contains(odlSrc)) {
       if (!distances(odlSrc).has_propagated || distances(odlSrc).distance == Double.MaxValue) {
