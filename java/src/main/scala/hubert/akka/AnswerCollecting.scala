@@ -1,47 +1,46 @@
 package hubert.akka
 import akka.actor.ActorRef
+import scala.collection.mutable.Map
+
+class SourceStatus(children: Array[ActorRef]) {
+  var readyCount = 0
+  var sum = 0.0
+  var status = Map(children.map(ref => ref -> false): _*)
+}
 
 trait AnswerCollecting {
-  var children: Map[ActorRef, NodeInfo]
-  var source: ActorRef = ActorRef.noSender
-  var finishedCount = 0
-  var sumResults: Double = 0
+  var statueses: Map[ActorRef, SourceStatus]
+  val children: Array[ActorRef]
 
-  def cleanInfo() {
-    children.foreach {
-      case (ref, info) =>
-        info.finished = false
-        info.distance = Double.MaxValue
-    }
-    finishedCount = 0
-    sumResults = 0
+  def removeSource(src: ActorRef) {
+    statueses -= src
   }
 
-  def allFinished: Boolean = {
-    finishedCount == children.size
+  def addSource(src: ActorRef) {
+    var ss = new SourceStatus(children)
+    statueses.put(src, ss)
   }
 
-  def updateEstimate(dist: Double, sender: ActorRef) {
-    val nodeInfo: NodeInfo = children(sender)
-    sumResults -= nodeInfo.distance + dist
-    nodeInfo.distance = dist
-    if (!nodeInfo.finished) finishedCount += 1
-    nodeInfo.finished = true
+  def getSum(src : ActorRef): Double = statueses(src).sum
+
+  def onAllFinished(src: ActorRef)
+
+  def correctBy(diff: Double, src: ActorRef, sender: ActorRef) {
+    var ss = statueses(src)
+    ss.sum += diff
+    if (ss.status(sender)) return;
+    ss.readyCount += 1
+    ss.status(sender) = true
+    if(ss.readyCount == ss.status.size)
+      onAllFinished(src)
   }
 
-  def correctBy(diff: Double, sender: ActorRef) {
-    val nodeInfo: NodeInfo = children(sender)
-    nodeInfo.distance += diff
-    sumResults += diff
-    if (nodeInfo.finished) return;
-    finishedCount += 1
-    nodeInfo.finished = true
+  def notFinished(src: ActorRef, sender: ActorRef) {
+    var ss = statueses(src)
+    if (ss.status(sender)) return;
+    ss.status(sender) = false
+    ss.readyCount -= 1
   }
 
-  def notFinished(sender: ActorRef) {
-    val nodeInfo: NodeInfo = children(sender)
-    if (!nodeInfo.finished) return;
-    nodeInfo.finished = false
-    finishedCount -= 1
-  }
+  def getTotal()
 }

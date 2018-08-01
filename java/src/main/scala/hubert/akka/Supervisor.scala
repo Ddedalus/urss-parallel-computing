@@ -1,7 +1,7 @@
 package hubert.akka
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
-import hubert.akka.Node.{Neighbours, DistanceEstimate, NewSource, AskDistance}
+import hubert.akka.Node.{Neighbours, DistanceEstimate, AskDistance}
 import hubert.akka.GraphBuilder.{NodesCreated}
 import hubert.akka.Master.{CorrectBy, NotFinished}
 
@@ -24,9 +24,8 @@ class Supervisor(nodes: Array[Int])
     with ActorLogging {
   import Supervisor._
 
-  var children: Map[ActorRef, NodeInfo] = nodes.map { id =>
-    context.actorOf(Node.props, "n" + id) -> new NodeInfo(id)
-  }.toMap
+  var children: Array[ActorRef] = nodes.map(
+    id => context.actorOf(Node.props, "n" + id))
 
   context.parent ! NodesCreated(children.map {
     case (ref, info) => info.id -> ref
