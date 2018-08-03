@@ -3,6 +3,8 @@
 #include "Bitset.h"
 #include "graphIO.h"
 #include "algorithms.h"
+#include "parallel.h"
+
 #include "Timer.h"
 #include "tails.h"
 #include "Graph.h"
@@ -44,40 +46,28 @@ int main(int argc, char *argv[])
     Timer t;
     map<string, string> c = {
         {"algorithm", "tailsBFS"},
-        {"threads", "1"},
         {"machine", "joshua"},
         {"graphRepresentation", "map"},
         {"graphType", "barabasi"}};
+    int thread_count[] = {1, 2, 3, 4};
     cout<<"c="<<c<<endl;
     for (auto p : inputNames)
     {
         RunRecord r(c);
-        mapGraph mg;
-        readGraph(mg, inputPath + p);
+        vecGraph vg(1000);
+        readGraph(vg, inputPath + p);
         r["instance"] = p;
-        r["nodes"] = to_string(mg.nodes());
-        r["edges"] = to_string(mg.edges());
-
-        r["algorithm"] = "tails";
-        t.start("Tails:\t" + p);
-        sspBFStails(mg);
-        r["runtime"] = to_string(t.getElapsed());
-        t.print();
-        rw.write(r);
-
-        r["algorithm"] = "bfs";
-        t.start("BFS:\t" + p);
-        sspBFS(mg);
-        r["runtime"] = to_string(t.getElapsed());
-        t.print();
-        rw.write(r);
-
+        r["nodes"] = to_string(vg.nodes());
+        r["edges"] = to_string(vg.edges());
         r["algorithm"] = "bitset";
-        t.start("Bitset:\t" + p);
-        sspBitset(mg);
-        r["runtime"] = to_string(t.getElapsed());
-        t.print();
-        rw.write(r);
+        for(auto tr : thread_count){
+            t.start("Bitset:\t" + p);
+            sspParaBitset(vg, tr);
+            r["runtime"] = to_string(t.getElapsed());
+            r["threads"] = tr;
+            t.print();
+            rw.write(r);
+        }
     }
 
     return 0;
