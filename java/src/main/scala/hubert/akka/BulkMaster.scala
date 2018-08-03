@@ -43,8 +43,6 @@ class BulkMaster(filename: String) extends Master(filename) {
   }
 
   override def onLastGather(): Unit = if (allFinished) {
-    grandTotal += sumResults
-    cleanInfo()
     proclaimNewSource
   }
 
@@ -55,7 +53,7 @@ class BulkMaster(filename: String) extends Master(filename) {
       //   log.warning("Skipping: " + newSource.path.name)
       //   this.newSource = idIter.next}
 
-      implicit val timeout = Timeout(5 seconds)
+      implicit val timeout = Timeout(2 seconds)
       val futures = children.keys.map { _ ? Node.NewSource(newSource) }
       Future.sequence(futures).onComplete {
         case Success(list) => {
@@ -70,9 +68,16 @@ class BulkMaster(filename: String) extends Master(filename) {
         }
       }
     } else {
+      grandTotal += sumResults
       log.warning("Grand total: {}", grandTotal)
       self ! PoisonPill
     }
+  }
+
+  def onNewSource(src : ActorRef){
+    grandTotal += sumResults
+    cleanInfo
+    this.source = src
   }
 
   // not used
@@ -92,6 +97,6 @@ class BulkMaster(filename: String) extends Master(filename) {
         proclaimNewSource
       }
     }
-    case Node.NewSource(src) => this.source = src
+    case Node.NewSource(src) => onNewSource(src)
   }
 }

@@ -1,7 +1,7 @@
 package hubert.akka
 
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
-import hubert.akka.Node.{Neighbours, DistanceEstimate, NewSource, AskDistance}
+import hubert.akka.Node.{Neighbours, DistanceEstimate, NewSource}
 import hubert.akka.GraphBuilder.{NodesCreated}
 import hubert.akka.Master.{CorrectBy, NotFinished}
 
@@ -37,17 +37,21 @@ class Supervisor(nodes: Array[Int])
   def onNewSource(src: ActorRef) {
     if (source == null)
       source = src
-    previousSource = source
-    source = src
-    cleanInfo; resetCorrections
+
     implicit val timeout = Timeout(2 seconds)
     val futures = children.keys.map(_ ? Node.NewSource(source))
-    Future.sequence(futures).onComplete {
-      case Success(list) => ;
+    val replyTarget = Iterable(Future(sender))
+    Future.sequence(replyTarget ++ futures).onComplete {
+      case Success(list) => {
+        val target = list.head.asInstanceOf[ActorRef]
+        previousSource = source
+        source = src
+        cleanInfo; resetCorrections
+        target ! true
+      }
       case Failure(e) =>
         log.error("Failed to establish new source: " + e.toString)
     }
-    sender ! true
   }
 
   def onCorrectBy(diff: Double, source: ActorRef) {
