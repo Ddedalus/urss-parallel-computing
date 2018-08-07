@@ -1,6 +1,6 @@
 package hubert.akka
 
-import akka.actor.{Timers, Actor, ActorLogging, ActorRef, Props, PoisonPill}
+import akka.actor.{Timers, Actor, ActorLogging, ActorRef, Props}
 import scala.concurrent.duration._
 
 object Master {
@@ -9,6 +9,7 @@ object Master {
   final case class UpdateEstimate(distance: Double, source: ActorRef)
   case object NotFinished
   final case class CorrectBy(diff: Double, source: ActorRef)
+  case object TimedOut
 }
 
 
@@ -21,7 +22,7 @@ class Master(filename: String)
   import Master._
   import hubert.akka.Node._
 
-  timers.startSingleTimer(PoisonPill, PoisonPill, 20.seconds)
+  timers.startSingleTimer(TimedOut, TimedOut, 20.seconds)
 
 
   def onRequestASP(source: Int): Unit = {
@@ -72,6 +73,8 @@ class Master(filename: String)
     case CorrectBy(diff, src)      => onCorrectBy(diff, src)
     case NotFinished               => notFinished(sender)
     case GatherResults             => onGather(() => onLastGather())
-    case PoisonPill                => log.warning("System timed out")
+    case TimedOut                => {
+      log.info("System timed out");
+      context.system.terminate}
   }
 }
