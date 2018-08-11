@@ -92,8 +92,8 @@ class Node() extends Actor with SendingCorrections with ActorLogging {
         onNewSource(src)
     }
     case DistanceEstimate(dist, src) => {
-      if (src == this.source) onDistanceEstimate(dist)
-      else log.warning("Expected source {}", this.source.path.name)
+      if (src != this.source) onNewSource(src)
+      onDistanceEstimate(dist)
     }
     case Propagate         => onPropagate
     case UpdateParent(src) => onUpdateParent(src)

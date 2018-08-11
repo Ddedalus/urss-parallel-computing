@@ -5,13 +5,6 @@ import hubert.akka.Node.{Neighbours, DistanceEstimate, NewSource}
 import hubert.akka.GraphBuilder.{NodesCreated}
 import hubert.akka.Master.{CorrectBy, NotFinished}
 
-import scala.concurrent.duration._
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Success, Failure}
-import ExecutionContext.Implicits.global
-import akka.util.Timeout
-import akka.pattern.ask
-
 object Supervisor {
   def props(nodes: Array[Int]): Props = Props(new Supervisor(nodes))
 }
@@ -36,22 +29,10 @@ class Supervisor(nodes: Array[Int])
   var tempSender : ActorRef = _
 
   def onNewSource(src: ActorRef) {
-
-    implicit val timeout = Timeout(4 seconds)
-    val futures = children.keys.map(_ ? Node.NewSource(src))
-    tempSender = sender
-    // log.info("Target passed: {}", sender.path)
-    Future.sequence(futures).onComplete {
-      case Success(list) => {
-        // log.info("Target received: {}", target.path)
-        previousSource = source
-        source = src
-        cleanInfo; resetCorrections
-        tempSender ! true
-      }
-      case Failure(e) =>
-        log.error("Failed to establish new source: " + e.toString)
-    }
+    previousSource = source
+    source = src
+    cleanInfo; resetCorrections
+    sender ! true
   }
 
   def onCorrectBy(diff: Double, source: ActorRef) {
@@ -68,35 +49,19 @@ class Supervisor(nodes: Array[Int])
   }
 
   def onNotFinished(): Unit = {
-    val was_finished = allFinished
-    notFinished(sender)
-    if (was_finished && !allFinished) {
+    if (allFinished)
       context.parent ! NotFinished
-    }
+    notFinished(sender)
   }
 
   def onLastGather(): Unit = {
-    if (allFinished && shouldSendCorrection(sumResults)) {
+    if (allFinished) {
       log.info("Corrected parrent with {}", sumResults)
       context.parent ! CorrectBy(getCorrection(sumResults), source)
-    } // on LastGather()
-  }
-
-  // not used
-  def onUpdateEstimate(dist: Double, source: ActorRef): Unit = {
-    if (source != this.source) {
-      if (source == previousSource)
-        log.warning("Estimate on previous source")
-      else
-        log.warning("Estimate for {}; {} expected.",
-                    source.path.name,
-                    this.source.path.name)
-      return;
-    }
-    updateEstimate(dist, sender)
-    if (allFinished) {
-      self ! GatherResults
-    }
+    }else{
+      log.info("Last gather when not everyone finished...")
+      setGather(self)
+    } 
   }
 
   def receive = {
