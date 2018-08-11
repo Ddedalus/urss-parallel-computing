@@ -31,29 +31,36 @@ class Node() extends Actor with SendingCorrections with ActorLogging {
   private var propagated = true
   var newMessages = false
   var sentReady = true
-  private var source = ActorRef.noSender
+  var source = ActorRef.noSender
 
   def onNewSource(src: ActorRef) {
-    source = src
+    this.source = src
     sender ! true
+
     dist = Double.MaxValue
-    propagated = true; newMessages = true; sentReady=false
+    propagated = true;
+    newMessages = true; sentReady = false
     resetCorrections
   }
 
   def onDistanceEstimate(distance: Double): Unit = {
-    newMessages = true
-    if (distance >= dist) return
-    dist = distance
-    if (propagated) {
+    if (dist == Double.MaxValue) { // first message received
+      self ! UpdateParent(source)
       self ! Propagate
       propagated = false
     }
+    newMessages = true
     if (sentReady) {
       context.parent ! NotFinished
       sentReady = false
     }
-    // send the messages just for the first time
+    if (distance < dist) {
+      dist = distance
+      if (propagated) {
+        self ! Propagate
+        propagated = false
+      }
+    }
 
   }
 
@@ -62,13 +69,12 @@ class Node() extends Actor with SendingCorrections with ActorLogging {
       n ! DistanceEstimate(dist + 1, source)
     }
     propagated = true
-    self ! UpdateParent(source)
-    newMessages = false
   }
 
   def onUpdateParent(src: ActorRef) {
     if (!newMessages) {
       context.parent ! CorrectBy(getCorrection(dist), source)
+      log.info("Updated {}", dist)
       sentReady = true
     } else {
       newMessages = false
@@ -78,15 +84,16 @@ class Node() extends Actor with SendingCorrections with ActorLogging {
 
   def receive = {
     case Neighbours(nb) => neigh = nb
-    case ns: NewSource => {
-      if (newMessages || !sentReady)
-        self.forward(ns)
-      else
-        onNewSource(ns.sourceId)
+    case NewSource(src) => {
+      if (newMessages || !sentReady) {
+        log.info("Forwarded")
+        self.forward(NewSource(src), sender)
+      } else
+        onNewSource(src)
     }
     case DistanceEstimate(dist, src) => {
-      if (src == source) onDistanceEstimate(dist)
-      else log.warning("Wrong source {}", src.path.name)
+      if (src == this.source) onDistanceEstimate(dist)
+      else log.warning("Expected source {}", this.source.path.name)
     }
     case Propagate         => onPropagate
     case UpdateParent(src) => onUpdateParent(src)
