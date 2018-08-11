@@ -33,21 +33,21 @@ class Supervisor(nodes: Array[Int])
   }.toMap)
 
   var previousSource: ActorRef = _
+  var tempSender : ActorRef = _
 
   def onNewSource(src: ActorRef) {
-    if (source == null)
-      source = src
 
-    implicit val timeout = Timeout(2 seconds)
-    val futures = children.keys.map(_ ? Node.NewSource(source))
-    val replyTarget = Iterable(Future(sender))
-    Future.sequence(replyTarget ++ futures).onComplete {
+    implicit val timeout = Timeout(4 seconds)
+    val futures = children.keys.map(_ ? Node.NewSource(src))
+    tempSender = sender
+    // log.info("Target passed: {}", sender.path)
+    Future.sequence(futures).onComplete {
       case Success(list) => {
-        val target = list.head.asInstanceOf[ActorRef]
+        // log.info("Target received: {}", target.path)
         previousSource = source
         source = src
         cleanInfo; resetCorrections
-        target ! true
+        tempSender ! true
       }
       case Failure(e) =>
         log.error("Failed to establish new source: " + e.toString)
