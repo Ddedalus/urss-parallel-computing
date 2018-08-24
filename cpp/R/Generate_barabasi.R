@@ -1,6 +1,6 @@
-library(here)
-library(igraph)
-library(stringr)
+require(here)
+require(igraph)
+require(stringr)
 
 getTailedGraph <- function(thousands) {
   barabasi.game(1000*thousands, power = 0.1, m = 10, out.dist = NULL, out.seq = NULL, out.pref = FALSE, zero.appeal = 1, directed = FALSE,

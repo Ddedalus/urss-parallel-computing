@@ -1,0 +1,12 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=4
+#PBS -l pmem=2571mb
+#PBS -l walltime=00:00:30
+
+module load GCC CMake OpenMPI
+
+MY_MAX_THREADS=$SLURM_NTASKS_PER_NODE
+export OMP_NUM_THREADS=$MY_MAX_THREADS
+
+srun -n 1 -c $MY_MAX_THREADS ./main ../../data/barabasi/
+

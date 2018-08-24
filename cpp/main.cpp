@@ -33,11 +33,12 @@ void read_directory(string inputPath, vector<string> &names)
 
 int main(int argc, char *argv[])
 {
-    if(argc < 2)
+    if(argc <4)
         return 1;
     
-    string outPath("../output/joshua.csv");
+    string outPath(argv[2]);
     string inputPath(argv[1]);
+    int numThreads = std::stoi(argv[3]);
 
     cout<<"Record writer counter:\t"<< RecordWriter::run_counter_path <<endl;
     RecordWriter rw(outPath);
@@ -45,11 +46,11 @@ int main(int argc, char *argv[])
     read_directory(inputPath, inputNames);
     Timer t;
     map<string, string> c = {
-        {"algorithm", "tailsBFS"},
+        {"algorithm", "paraBitset"},
         {"machine", "joshua"},
         {"graphRepresentation", "map"},
-        {"graphType", "barabasi"}};
-    int thread_count[] = {1, 2, 3, 4};
+        {"graphType", "barabasi"},
+	{"threads", argv[3]}};
     cout<<"c="<<c<<endl;
     for (auto p : inputNames)
     {
@@ -59,15 +60,11 @@ int main(int argc, char *argv[])
         r["instance"] = p;
         r["nodes"] = to_string(vg.nodes());
         r["edges"] = to_string(vg.edges());
-        r["algorithm"] = "bitset";
-        for(auto tr : thread_count){
-            t.start("Bitset:\t" + p);
-            sspParaBitset(vg, tr);
-            r["runtime"] = to_string(t.getElapsed());
-            r["threads"] = tr;
-            t.print();
-            rw.write(r);
-        }
+	    t.start("Bitset:\t" + p);
+	    sspParaBitset(vg, tr);
+    r["runtime"] = to_string(t.getElapsed());
+    t.print();
+    rw.write(r);
     }
 
     return 0;
