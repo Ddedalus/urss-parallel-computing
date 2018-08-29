@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
     map<string, string> c = {
         {"algorithm", "paraBFS"},
         {"machine", "joshua"},
-        {"graphRepresentation", "map"},
+        {"graphRepresentation", "vector"},
         {"graphType", "barabasi"},
 	{"threads", argv[3]}};
     cout<<"c="<<c<<endl;
