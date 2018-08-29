@@ -60,8 +60,8 @@ int main(int argc, char *argv[])
         r["instance"] = p;
         r["nodes"] = to_string(vg.nodes());
         r["edges"] = to_string(vg.edges());
-	    t.start("Bitset:\t" + p);
-	    sspParaBitset(vg, numThreads);
+	    t.start("ParaBFS:\t" + p);
+	    auto ans = sspParaBFS(vg, numThreads);
     r["runtime"] = to_string(t.getElapsed());
     if(ans != sspBitset(vg))
         cout << "Wrong answer!!!"<<endl;
