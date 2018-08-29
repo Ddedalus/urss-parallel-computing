@@ -63,6 +63,8 @@ int main(int argc, char *argv[])
 	    t.start("Bitset:\t" + p);
 	    sspParaBitset(vg, numThreads);
     r["runtime"] = to_string(t.getElapsed());
+    if(ans != sspBitset(vg))
+        cout << "Wrong answer!!!"<<endl;
     t.print();
     rw.write(r);
     }
