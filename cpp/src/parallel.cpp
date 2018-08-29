@@ -1,4 +1,5 @@
 #include "parallel.h"
+#include "algorithms.h"
 
 using namespace std;
 
@@ -29,11 +30,11 @@ uint64_t sspParaBitset(const vecGraph &g, int maxThreads)
         {
             // For each node
 #pragma omp reduction(+ \
-                      : sum)
+                      : sum) schedule(static, 250)
             for (uint i = 0; i < g.nodes(); i++)
             {
                 // For each neighbour
-                for (auto n : g[i])
+                for (auto n : g.neighbours(i))
                 {
                     reachingNext[i] += reaching[n];
                 }
@@ -43,7 +44,7 @@ uint64_t sspParaBitset(const vecGraph &g, int maxThreads)
             // For each node, update reaching vector
             done = true;
 #pragma omp reduction(&& \
-                      : done)
+                      : done) schedule(static, 250)
             for (uint i = 0; i < g.nodes(); i++)
             {
                 reaching[i].copy_from(reachingNext[i]);
@@ -58,4 +59,17 @@ uint64_t sspParaBitset(const vecGraph &g, int maxThreads)
         }
     }
     return sum;
+}
+
+uint64_t sspParaBFS(const vecGraph &g, int maxThreads){
+	uint64_t sum = 0;
+    omp_set_num_threads(maxThreads);
+    #pragma omp parallel
+    {
+    #pragma omp for reduction(+ : sum)
+	for(uint i = 0; i < g.nodes(); i++){
+	    sum += vertexBFS(g, i);
+	}
+    }
+	return sum;
 }

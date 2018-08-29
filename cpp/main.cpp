@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     
     string outPath(argv[2]);
     string inputPath(argv[1]);
-    int numThreads = std::stoi(argv[3]);
+    int numThreads = stoi(argv[3]);
 
     cout<<"Record writer counter:\t"<< RecordWriter::run_counter_path <<endl;
     RecordWriter rw(outPath);
@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     read_directory(inputPath, inputNames);
     Timer t;
     map<string, string> c = {
-        {"algorithm", "paraBitset"},
+        {"algorithm", "paraBFS"},
         {"machine", "joshua"},
         {"graphRepresentation", "map"},
         {"graphType", "barabasi"},
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
         r["nodes"] = to_string(vg.nodes());
         r["edges"] = to_string(vg.edges());
 	    t.start("Bitset:\t" + p);
-	    sspParaBitset(vg, tr);
+	    sspParaBFS(vg, numThreads);
     r["runtime"] = to_string(t.getElapsed());
     t.print();
     rw.write(r);

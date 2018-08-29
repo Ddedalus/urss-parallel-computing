@@ -8,5 +8,5 @@ module load GCC CMake OpenMPI
 MY_MAX_THREADS=$SLURM_NTASKS_PER_NODE
 export OMP_NUM_THREADS=$MY_MAX_THREADS
 
-srun -n 1 -c $MY_MAX_THREADS ./main ../../data/barabasi/
+srun -n 1 -c $MY_MAX_THREADS ./main ../../data/barabasi/ ../../output/out$MY_MAX_THREADS.csv $MY_MAX_THREADS
 
