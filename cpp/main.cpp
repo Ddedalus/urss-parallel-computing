@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
         r["nodes"] = to_string(vg.nodes());
         r["edges"] = to_string(vg.edges());
 	    t.start("Bitset:\t" + p);
-	    sspParaBFS(vg, numThreads);
+	    sspParaBitset(vg, numThreads);
     r["runtime"] = to_string(t.getElapsed());
     t.print();
     rw.write(r);

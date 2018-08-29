@@ -8,29 +8,26 @@ uint64_t sspParaBitset(const vecGraph &g, int maxThreads)
     omp_set_num_threads(maxThreads);
     // Sum of distances
     uint64_t sum = 0;
+    bool done = false;
     // Initialise reaching vector for each node
     vector<Bitset> reaching(g.nodes(), Bitset(g.nodes()));
     vector<Bitset> reachingNext(g.nodes(), Bitset(g.nodes()));
-#pragma omp parallel
-#pragma omp single
-    cout << "Working with " << omp_get_num_threads() << " threads." << endl;
-    {
-#pragma omp for
+
+#pragma omp parallel for
         for (uint i = 0; i < g.nodes(); i++)
         {
             reaching[i].set(i, true);
             reachingNext[i].set(i, true);
         }
 
-        // Distance increases on each iteration
+        // Distance increases on each iteration, thread private variable
         uint32_t dist = 1;
 
-        bool done = false;
         while (!done)
         {
             // For each node
-#pragma omp reduction(+ \
-                      : sum) schedule(static, 250)
+#pragma omp parallel for reduction(+ \
+                          : sum) schedule(static, 250)
             for (uint i = 0; i < g.nodes(); i++)
             {
                 // For each neighbour
@@ -43,8 +40,8 @@ uint64_t sspParaBitset(const vecGraph &g, int maxThreads)
             }
             // For each node, update reaching vector
             done = true;
-#pragma omp reduction(&& \
-                      : done) schedule(static, 250)
+#pragma omp parallel for reduction(&& \
+                          : done)
             for (uint i = 0; i < g.nodes(); i++)
             {
                 reaching[i].copy_from(reachingNext[i]);
@@ -54,22 +51,21 @@ uint64_t sspParaBitset(const vecGraph &g, int maxThreads)
                     // cout<<"Node "<< i <<" not full, size: "<< reaching[i].count()<<endl;
                 }
             }
-#pragma omp single
             dist++;
         }
-    }
     return sum;
 }
 
-uint64_t sspParaBFS(const vecGraph &g, int maxThreads){
-	uint64_t sum = 0;
+uint64_t sspParaBFS(const vecGraph &g, int maxThreads)
+{
+    uint64_t sum = 0;
     omp_set_num_threads(maxThreads);
-    #pragma omp parallel
+#pragma omp parallel
+#pragma omp for reduction(+ \
+                          : sum)
+    for (uint i = 0; i < g.nodes(); i++)
     {
-    #pragma omp for reduction(+ : sum)
-	for(uint i = 0; i < g.nodes(); i++){
-	    sum += vertexBFS(g, i);
-	}
+        sum += vertexBFS(g, i);
     }
-	return sum;
+    return sum;
 }
