@@ -2,7 +2,7 @@
 
 using namespace std;
 
-uint64_t vertexBFS(vecGraph& g, nodeID v_id){
+  uint64_t vertexBFS(const vecGraph& g, nodeID v_id){
 	uint64_t sum = 0, count = 1;
 	vector<bool> visited(g.nodes(), false);
 	deque<qNodeLight> q;	// greater memory flexibility
@@ -10,7 +10,7 @@ uint64_t vertexBFS(vecGraph& g, nodeID v_id){
 
 	while(!q.empty() && count < g.nodes()){
 		qNodeLight current = q.front(); q.pop_front();
-		for(nodeId n : g[current.n]){
+		for(const nodeID n : g.neighbours(current.n)){
 			if(! visited[n]){
 				q.push_back({n, current.dist + 1});
 				sum += current.dist + 1;
@@ -24,7 +24,7 @@ uint64_t vertexBFS(vecGraph& g, nodeID v_id){
 	return sum;
 }
 
-uint64_t sspBFS(vecGraph &g){
+uint64_t sspBFS(const vecGraph &g){
 	uint64_t sum = 0;
 	for(uint i = 0; i < g.nodes(); i++){
 	    sum += vertexBFS(g, i);
@@ -37,7 +37,7 @@ uint64_t sspBFS(mapGraph& g){
   return sspBFS(dg);
 }
 
-uint64_t sspBitset(vecGraph &g)
+uint64_t sspBitset(const vecGraph &g)
 {
   // Sum of distances
   uint64_t sum = 0;
@@ -57,7 +57,7 @@ uint64_t sspBitset(vecGraph &g)
     // For each node
     for (uint i = 0; i < g.nodes(); i++) {
       // For each neighbour
-      for (auto n : g[i]){
+      for (const auto n : g.neighbours(i)){
         reachingNext[i] += reaching[n];
       }
       // add the shortest paths found

@@ -35,6 +35,10 @@ public:
     std::vector<nodeID>& operator[](nodeID pos) override {
         return adj_list[pos];
     }
+    const std::vector<nodeID> & neighbours(nodeID pos) const {
+        return adj_list[pos];
+    }
+    
     void addEdge(nodeID from, nodeID to, bool directed = false) override;
 
     std::vector<Node>& data(){  return adj_list;    }

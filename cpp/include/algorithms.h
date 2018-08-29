@@ -35,7 +35,7 @@ struct qNodeLight
  * @return uint64_t sum of lengths of shortest paths between every pair of vertices.  
  */
 uint64_t sspBitset(mapGraph &g);
-uint64_t sspBitset(vecGraph &g);
+uint64_t sspBitset(const vecGraph &g);
 
 /**
  * @brief SSP by classical, queue based BFS applied to each node in turn.
@@ -47,7 +47,7 @@ uint64_t sspBitset(vecGraph &g);
  * @return uint64_t sum of lengths of shortest paths between every pair of vertices
  */
 uint64_t sspBFS(mapGraph &g);
-uint64_t sspBFS(vecGraph &g);
+uint64_t sspBFS(const vecGraph &g);
 
 /**
  * @brief SSP for a given source node, computed by a queue based BFS.
@@ -59,6 +59,6 @@ uint64_t sspBFS(vecGraph &g);
  * @param numNodes in neighbours
  * @return uint64_t sum of lengths of shortest paths from v to each other node in the graph 
  */
-uint64_t vertexBFS(vecGraph &g, nodeID source);
+uint64_t vertexBFS(const vecGraph &g, nodeID source);
 
 #endif

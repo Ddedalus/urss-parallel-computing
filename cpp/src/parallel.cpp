@@ -2,7 +2,7 @@
 
 using namespace std;
 
-uint64_t sspParaBitset(vecGraph &g, int maxThreads)
+uint64_t sspParaBitset(const vecGraph &g, int maxThreads)
 {
     omp_set_num_threads(maxThreads);
     // Sum of distances
