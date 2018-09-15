@@ -35,7 +35,7 @@ class Master(filename: String)
 
   var idIter: Iterator[Source] = _
   var grandTotal: Double = _
-  var active: Map[Source, SourceStatus] = _
+  var active = Map[Source, SourceStatus]()
 
   def onCorrectBy(diff: Double, source: Source) {
     if (active.contains(source)) {
@@ -83,7 +83,7 @@ class Master(filename: String)
     Future.sequence(futures).onComplete {
       case Success(list) => {
         val newSource =
-          list.asInstanceOf[Array[SourceRegistered]].head.source
+          list.asInstanceOf[List[SourceRegistered]].head.source
         log.info("New source {}", newSource.path.name)
         newSource ! NodeAct.DistanceEstimate(0, newSource)
       }

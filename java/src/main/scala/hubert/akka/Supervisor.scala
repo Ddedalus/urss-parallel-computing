@@ -19,9 +19,8 @@ class Supervisor(nodes: Iterable[Int])
   var children: Array[Node] = idMap.values.toArray
 
   context.parent ! new GraphBuilder.NodesCreated(idMap)
-  idMap = null
 
-  var active: Map[Node, SourceStatus] = _
+  var active = Map[Node, SourceStatus]()
 
   def onNewSource(source: Node) {
     active += (source -> new SourceStatus(children))
@@ -59,7 +58,7 @@ class Supervisor(nodes: Iterable[Int])
   }
 
   def onRemoveSource(source: Source) {
-    children.foreach( _ ! RemoveSource(source))
+    children.foreach(_ ! RemoveSource(source))
     active -= source
     //TODO add some checks here
   }

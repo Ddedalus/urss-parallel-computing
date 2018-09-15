@@ -7,7 +7,7 @@ import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
 //remove if not needed
 import scala.collection.JavaConversions._
 
-class Status(dist: Double) { 
+class Status(dist: Double) {
   var distance = dist
   var announced = 0.0
   var propagated = false
@@ -35,10 +35,10 @@ class NodeAct() extends Actor with ActorLogging {
   import Messages._
 
   private var neigh: Array[Node] = _
-  private var active: Map[Source, Status] = _
+  private var active = Map[Source, Status]()
 
   def onDistanceEstimate(distance: Double, source: Source): Unit = {
-    if (! active.contains(source)) { 
+    if (!active.contains(source)) {
       active += (source -> new Status(distance))
       self ! Propagate(source)
       self ! UpdateParent(source) // exactly one such message is always in the mailbox
@@ -46,8 +46,8 @@ class NodeAct() extends Actor with ActorLogging {
       var status = active(source)
       status.newMessages = true
       if (status.distance > distance) {
-        if(status.sentIdle)
-          context.parent ! NotIdle(source)  
+        if (status.sentIdle)
+          context.parent ! NotIdle(source)
         if (status.propagated)
           self ! Propagate(source)
 
@@ -58,7 +58,7 @@ class NodeAct() extends Actor with ActorLogging {
   }
 
   def onPropagate(src: Source): Unit = {
-    if (! active.contains(src))
+    if (!active.contains(src))
       log.info("Error, propagating inactive source")
     else {
       var status = active(src)
@@ -70,7 +70,7 @@ class NodeAct() extends Actor with ActorLogging {
   }
 
   def onUpdateParent(source: Source) {
-    if (! active.contains(source))
+    if (!active.contains(source))
       log.info("Error, updating inactive source")
     else {
       var status = active(source)
@@ -90,7 +90,7 @@ class NodeAct() extends Actor with ActorLogging {
     case DistanceEstimate(dist, src) => onDistanceEstimate(dist, src)
     case Propagate(src)              => onPropagate(src)
     case UpdateParent(src)           => onUpdateParent(src)
-    case RemoveSource(src) => active -= src
+    case RemoveSource(src)           => active -= src
     // TODO: add some checks here
   }
 }

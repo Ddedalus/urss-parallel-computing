@@ -34,7 +34,7 @@ class GraphBuilder(filename: String) extends Actor with ActorLogging {
       context.actorOf(Supervisor.props(list.toArray), "s" + index)
   }.toArray
 
-  var nodesRef: Map[Int, ActorRef] = _  // used to construct neighbourhood lists
+  var nodesRef = Map[Int, ActorRef]()  // used to construct neighbourhood lists
   var supervisorsCount: Int = _
   // this should use ask pattern with futures instead
   def onNodesCreated(refs: Map[Int, Node]) {
