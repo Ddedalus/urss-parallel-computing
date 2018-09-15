@@ -11,8 +11,6 @@ class Supervisor(nodes: Iterable[Int])
     with Gathering
     with ActorLogging {
   import Supervisor._
-  import GraphBuilder.{NodesCreated}
-  import NodeAct.{Neighbours}
   import Messages._
 
   var idMap: Map[Int, Node] = nodes.map { id =>
@@ -20,7 +18,7 @@ class Supervisor(nodes: Iterable[Int])
   }.toMap
   var children: Array[Node] = idMap.values.toArray
 
-  context.parent ! new NodesCreated(idMap)
+  context.parent ! new GraphBuilder.NodesCreated(idMap)
   idMap = null
 
   var active: Map[Node, SourceStatus] = _
@@ -44,7 +42,7 @@ class Supervisor(nodes: Iterable[Int])
 
   def onNotIdle(source: Node): Unit = {
     var status = active(source)
-    if (status.allIdle)
+    if (status.allIdle) // this should actually check if a message was sent, but a good proxy here
       context.parent ! NotIdle(source)
     status.setNotIdle(sender)
   }
@@ -52,12 +50,18 @@ class Supervisor(nodes: Iterable[Int])
   def onLastGather(source: Node): Unit = {
     var status = active(source)
     if (status.allIdle) {
-      log.info("Corrected parrent with {}", status.getSum)
       context.parent ! CorrectBy(status.getCorrection, source)
+      log.info("Corrected parrent with {}", status.getSum)
     } else {
       log.info("Last gather when not everyone idle...")
-      setGather(self, source)
+      // setGather(self, source)
     }
+  }
+
+  def onRemoveSource(source: Source) {
+    children.foreach( _ ! RemoveSource(source))
+    active -= source
+    //TODO add some checks here
   }
 
   def receive = {
@@ -65,7 +69,7 @@ class Supervisor(nodes: Iterable[Int])
     case NotIdle(source)      => onNotIdle(source)
     case GatherResults(source) =>
       onGather(source, source => onLastGather(source))
-    case NewSource(src) => onNewSource(src)
-    case RemoveSource(src)      => active -= src
+    case NewSource(src)    => onNewSource(src)
+    case RemoveSource(src) => onRemoveSource(src)
   }
 }

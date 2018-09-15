@@ -30,7 +30,7 @@ class Master(filename: String)
     with Timers {
   import Master._
   import Messages._
-  import hubert.akka.Supervisor._
+  // TODO remove for production!!!
   timers.startSingleTimer(TimedOut, TimedOut, 20.seconds)
 
   var idIter: Iterator[Source] = _
@@ -69,7 +69,7 @@ class Master(filename: String)
       }
     } else {
       log.warning("Last gather when not everyone idle")
-      setGather(self, source)
+      // setGather(self, source)
     }
   }
 

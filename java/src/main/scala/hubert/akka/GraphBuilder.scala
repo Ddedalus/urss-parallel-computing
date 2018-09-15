@@ -21,8 +21,6 @@ class GraphBuilder(filename: String) extends Actor with ActorLogging {
   import hubert.akka.ReadGraph._
   import hubert.akka.Messages._
   import GraphBuilder._
-  import hubert.akka.Supervisor._
-  import hubert.akka.NodeAct.{Neighbours}
 
   var graph: Map[Int, Array[Int]] =
     ReadGraph
@@ -30,18 +28,17 @@ class GraphBuilder(filename: String) extends Actor with ActorLogging {
       .asScala
       .map({ case (id, neigh) => id.toInt -> neigh.map(_.toInt) }).toMap
 
-  var nodesRef: Map[Int, ActorRef] = _
-  var outside: ActorRef = ActorRef.noSender
-
   var supervisors: Array[ActorRef] =
   graph.keys.sliding(branching, branching).toList.zipWithIndex.map{
     case (list, index) =>
       context.actorOf(Supervisor.props(list.toArray), "s" + index)
   }.toArray
 
+  var nodesRef: Map[Int, ActorRef] = _  // used to construct neighbourhood lists
   var supervisorsCount: Int = _
+  // this should use ask pattern with futures instead
   def onNodesCreated(refs: Map[Int, Node]) {
-    nodesRef = nodesRef ++ refs;
+    nodesRef ++= refs;
     supervisorsCount += 1
     if (supervisorsCount == supervisors.size) {
       self ! BuildGraph
@@ -54,12 +51,12 @@ class GraphBuilder(filename: String) extends Actor with ActorLogging {
         val neigh = graph(id).map { n_id =>
           nodesRef(n_id)
         }
-        ref ! new Neighbours(neigh)
+        ref ! new NodeAct.Neighbours(neigh)
       }
     }
     this.graph = null
 
-    log.info("Idle initializing agents: " + supervisors.size)
+    log.info("Finished initializing supervisors: " + supervisors.size)
   }
 
   def receive = {

@@ -12,7 +12,7 @@ class Status(dist: Double) {
   var announced = 0.0
   var propagated = false
   var newMessages = false
-  var sentReady = true
+  var sentIdle = false
   def getCorrection(): Double = {
     val ret = distance - announced
     announced = distance
@@ -25,7 +25,6 @@ object NodeAct extends CommonInterfaces {
   def props: Props = Props(new NodeAct())
 
   final case class Neighbours(neighbours: Array[Node])
-
   final case class DistanceEstimate(distance: Double, src: Source)
   final case class Propagate(soruce: Source)
   final case class UpdateParent(source: Source)
@@ -38,19 +37,19 @@ class NodeAct() extends Actor with ActorLogging {
   private var neigh: Array[Node] = _
   private var active: Map[Source, Status] = _
 
-  def onDistanceEstimate(distance: Double, src: Source): Unit = {
-    if (! active.contains(src)) { // check this against docs
-      active += (src -> new Status(distance))
-      self ! UpdateParent(src)
-      self ! Propagate(src)
+  def onDistanceEstimate(distance: Double, source: Source): Unit = {
+    if (! active.contains(source)) { 
+      active += (source -> new Status(distance))
+      self ! Propagate(source)
+      self ! UpdateParent(source) // exactly one such message is always in the mailbox
     } else {
-      var status = active(src)
+      var status = active(source)
       status.newMessages = true
       if (status.distance > distance) {
-        if(status.sentReady)
-          context.parent ! NotIdle(src)  
+        if(status.sentIdle)
+          context.parent ! NotIdle(source)  
         if (status.propagated)
-          self ! Propagate(src)
+          self ! Propagate(source)
 
         status.propagated = false
         status.distance = distance
@@ -70,18 +69,18 @@ class NodeAct() extends Actor with ActorLogging {
     }
   }
 
-  def onUpdateParent(src: Source) {
-    if (! active.contains(src))
+  def onUpdateParent(source: Source) {
+    if (! active.contains(source))
       log.info("Error, updating inactive source")
     else {
-      var status = active(src)
+      var status = active(source)
       if (!status.newMessages) {
-        context.parent ! CorrectBy(status.getCorrection(), src)
+        context.parent ! CorrectBy(status.getCorrection(), source)
         // log.info("Updated {}", dist)
-        status.sentReady = true
+        status.sentIdle = true
       } else {
         status.newMessages = false
-        self ! UpdateParent(src)
+        self ! UpdateParent(source)
       }
     }
   }
@@ -91,6 +90,7 @@ class NodeAct() extends Actor with ActorLogging {
     case DistanceEstimate(dist, src) => onDistanceEstimate(dist, src)
     case Propagate(src)              => onPropagate(src)
     case UpdateParent(src)           => onUpdateParent(src)
-
+    case RemoveSource(src) => active -= src
+    // TODO: add some checks here
   }
 }
