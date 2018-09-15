@@ -37,13 +37,19 @@ class BulkMaster(filename: String) extends Master(filename) {
       grandTotal += diff
       log.info("Applied old source correction")
     }
-    if (allFinished){
+    if (allIdle){
       setGather(self)
     }
   }
 
-  override def onLastGather(): Unit = if (allFinished) {
-    proclaimNewSource
+  override def onLastGather(): Unit = {
+    if (allIdle) {
+      // proclaimNewSource
+      log.info("Sum: {}", sumResults)
+    }else{
+      log.warning("Last gather when not everyone idle")
+      setGather(self)
+    }
   }
 
   def proclaimNewSource() {
@@ -83,7 +89,7 @@ class BulkMaster(filename: String) extends Master(filename) {
   // not used
   override def onUpdateEstimate(dist: Double, source: ActorRef): Unit = {
     super.onUpdateEstimate(dist, source)
-    if (allFinished) {
+    if (allIdle) {
       gatherCounter += 1
     }
   }

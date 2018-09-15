@@ -3,7 +3,7 @@ package hubert.akka
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import hubert.akka.Node.{Neighbours, DistanceEstimate, NewSource}
 import hubert.akka.GraphBuilder.{NodesCreated}
-import hubert.akka.Master.{CorrectBy, NotFinished}
+import hubert.akka.Master.{CorrectBy, NotIdle}
 
 object Supervisor {
   def props(nodes: Array[Int]): Props = Props(new Supervisor(nodes))
@@ -17,57 +17,59 @@ class Supervisor(nodes: Array[Int])
     with ActorLogging {
   import Supervisor._
 
-  var children: Map[ActorRef, NodeInfo] = nodes.map { id =>
-    context.actorOf(Node.props, "n" + id) -> new NodeInfo(id)
-  }.toMap
 
-  context.parent ! NodesCreated(children.map {
-    case (ref, info) => info.id -> ref
-  }.toMap)
+// TODO:
+// top key is the active source ref
+// secondary key is node ref
+// active: SourceRef -> (idleCount, Map[NodeRef, NodeStatus])
 
-  var previousSource: ActorRef = _
-  var tempSender : ActorRef = _
+  var children: Array[ActorRef] = nodes.map { id =>
+    context.actorOf(Node.props, "n" + id)}
+
+  context.parent ! NodesCreated
+
+  var active : Map[ActorRef, SourceStatus] = _
 
   def onNewSource(src: ActorRef) {
-    previousSource = source
-    source = src
-    cleanInfo; resetCorrections
+    active += (src -> new SourceStatus(children))
     sender ! true
   }
 
   def onCorrectBy(diff: Double, source: ActorRef) {
-    if (source == this.source) {
-      correctBy(diff, sender)
-      // log.info("Node {} corrected by {}", sender.path.name, diff)
+    if (! active.contains(source)){
+      log.warning("Correction on inactive source")
     } else {
-      log.warning("Correction from a wrong source")
-      context.parent ! CorrectBy(diff, source) // bubble this up immediately for an ammendment on master
-    }
-    if (allFinished) {
-      setGather(self)
+      var status = active(source)
+      status.putDiff(sender, diff)
+      if (status.allIdle) {
+        setGather(self, source)
+      }
     }
   }
 
-  def onNotFinished(): Unit = {
-    if (allFinished)
-      context.parent ! NotFinished
-    notFinished(sender)
+  def onNotIdle(source: ActorRef): Unit = {
+    var status = active(source)
+    if (status.allIdle)
+      context.parent ! NotIdle(source)
+    status.setNotIdle(sender)
   }
 
-  def onLastGather(): Unit = {
-    if (allFinished) {
-      log.info("Corrected parrent with {}", sumResults)
-      context.parent ! CorrectBy(getCorrection(sumResults), source)
-    }else{
-      log.info("Last gather when not everyone finished...")
+  def onLastGather(source : ActorRef): Unit = {
+    var status = active(source)
+    if (status.allIdle) {
+      log.info("Corrected parrent with {}", status.sumResults)
+      context.parent ! CorrectBy(status.getCorrection, source)
+    } else {
+      log.info("Last gather when not everyone idle...")
       setGather(self)
-    } 
+    }
   }
 
   def receive = {
     case CorrectBy(diff, src) => onCorrectBy(diff, src)
-    case NotFinished          => onNotFinished
+    case NotIdle          => onNotIdle
     case GatherResults        => onGather(() => onLastGather())
     case Node.NewSource(src)  => onNewSource(src)
+    case RemoveSource(src) => active -= src
   }
 }

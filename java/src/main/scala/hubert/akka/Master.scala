@@ -7,7 +7,7 @@ object Master {
   def props(filename: String): Props = Props(new Master(filename))
   final case class RequestASP(source: Int)
   final case class UpdateEstimate(distance: Double, source: ActorRef)
-  case object NotFinished
+  final case class NotIdle(source : ActorRef)
   final case class CorrectBy(diff: Double, source: ActorRef)
   case object TimedOut
 }
@@ -39,7 +39,7 @@ class Master(filename: String)
     }
     updateEstimate(dist, sender)
 
-    if (allFinished)
+    if (allIdle)
       setGather(self)
   }
 
@@ -48,12 +48,12 @@ class Master(filename: String)
       correctBy(diff, sender)
     else
       log.warning("Correction from a wrong source")
-    if (allFinished) {
+    if (allIdle) {
       setGather(self)
     }
   }
 
-  def onLastGather(): Unit = if (allFinished) {
+  def onLastGather(): Unit = if (allIdle) {
     log.info("SSP of {} = {}", source.path.name, sumResults)
   }
   
@@ -64,14 +64,14 @@ class Master(filename: String)
   override def receive = super.receive orElse {
     case msg: RequestASP => {
       if (graph != null) {
-        timers.startSingleTimer(NotFinished, msg, 500.millis)
+        timers.startSingleTimer(NotIdle, msg, 500.millis)
         log.warning("Not ready to accept Request yet...")
       } else
         onRequestASP(msg.source)
     }
     case UpdateEstimate(dist, src) => onUpdateEstimate(dist, src)
     case CorrectBy(diff, src)      => onCorrectBy(diff, src)
-    case NotFinished               => notFinished(sender)
+    case NotIdle               => notIdle(sender)
     case GatherResults             => onGather(() => onLastGather())
     case TimedOut                => {
       log.info("System timed out");

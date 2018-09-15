@@ -7,6 +7,19 @@ import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 //remove if not needed
 import scala.collection.JavaConversions._
 
+class Status(dist: Double) { //with SendingCorrections
+  var distance = dist
+  var announced = 0.0
+  var propagated = false
+  var newMessages = false
+  var sentReady = true
+  def getCorrection(): Double = {
+    val ret = distance - announced
+    announced = distance
+    return ret
+  }
+}
+
 object Node {
 
   def props: Props = Props(new Node())
@@ -19,84 +32,70 @@ object Node {
 
   final case class UpdateParent(source: ActorRef)
 
-  case object Propagate
+  final case class Propagate(soruce: ActorRef)
+
 }
 
-class Node() extends Actor with SendingCorrections with ActorLogging {
-  import hubert.akka.Master.{NotFinished, CorrectBy}
+class Node() extends Actor with ActorLogging {
+  import hubert.akka.Master.{NotIdle, CorrectBy}
   import Node._
 
   private var neigh: Array[ActorRef] = _
-  private var dist: Double = 0
-  private var propagated = true
-  var newMessages = false
-  var sentReady = true
-  var source = ActorRef.noSender
+  private var active: Map[ActorRef, Status] = _
 
-  def onNewSource(src: ActorRef) {
-    this.source = src
-    sender ! true
+  def onDistanceEstimate(distance: Double, src: ActorRef): Unit = {
+    if (! active.contains(src)) { // check this against docs
+      active += (src -> new Status(distance))
+      self ! UpdateParent(src)
+      self ! Propagate(src)
+    } else {
+      var status = active(src)
+      status.newMessages = true
+      if (status.distance > distance) {
+        if(status.sentReady)
+          context.parent ! NotIdle(src)  
+        if (status.propagated)
+          self ! Propagate(src)
 
-    dist = Double.MaxValue
-    propagated = true;
-    newMessages = true; sentReady = false
-    resetCorrections
-  }
-
-  def onDistanceEstimate(distance: Double): Unit = {
-    if (dist == Double.MaxValue) { // first message received
-      self ! UpdateParent(source)
-      self ! Propagate
-      propagated = false
-    }
-    newMessages = true
-    if (sentReady) {
-      context.parent ! NotFinished
-      sentReady = false
-    }
-    if (distance < dist) {
-      dist = distance
-      if (propagated) {
-        self ! Propagate
-        propagated = false
+        status.propagated = false
+        status.distance = distance
       }
     }
-
   }
 
-  def onPropagate(): Unit = {
-    for (n <- neigh) {
-      n ! DistanceEstimate(dist + 1, source)
+  def onPropagate(src: ActorRef): Unit = {
+    if (! active.contains(src))
+      log.info("Error, propagating inactive source")
+    else {
+      var status = active(src)
+      for (n <- neigh) {
+        n ! DistanceEstimate(status.distance + 1, src)
+      }
+      status.propagated = true
     }
-    propagated = true
   }
 
   def onUpdateParent(src: ActorRef) {
-    if (!newMessages) {
-      context.parent ! CorrectBy(getCorrection(dist), source)
-      log.info("Updated {}", dist)
-      sentReady = true
-    } else {
-      newMessages = false
-      self ! UpdateParent(source)
+    if (! active.contains(src))
+      log.info("Error, updating inactive source")
+    else {
+      var status = active(src)
+      if (!status.newMessages) {
+        context.parent ! CorrectBy(status.getCorrection(), src)
+        // log.info("Updated {}", dist)
+        status.sentReady = true
+      } else {
+        status.newMessages = false
+        self ! UpdateParent(src)
+      }
     }
   }
 
   def receive = {
-    case Neighbours(nb) => neigh = nb
-    case NewSource(src) => {
-      if (newMessages || !sentReady) {
-        log.info("Forwarded")
-        self.forward(NewSource(src), sender)
-      } else
-        onNewSource(src)
-    }
-    case DistanceEstimate(dist, src) => {
-      if (src != this.source) onNewSource(src)
-      onDistanceEstimate(dist)
-    }
-    case Propagate         => onPropagate
-    case UpdateParent(src) => onUpdateParent(src)
+    case Neighbours(nb)              => neigh = nb
+    case DistanceEstimate(dist, src) => onDistanceEstimate(dist, src)
+    case Propagate(src)              => onPropagate(src)
+    case UpdateParent(src)           => onUpdateParent(src)
 
   }
 }

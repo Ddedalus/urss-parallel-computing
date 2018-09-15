@@ -2,17 +2,19 @@ package hubert.akka
 import akka.actor.ActorRef
 
 trait Gathering {
-  case object GatherResults
-  var gatherCounter: Int = 0;
+  final case class GatherResults(source : ActorRef)
+  var gatherCounters: Map[ActorRef, Int] = _
 
-  def setGather(me: ActorRef) {
-    gatherCounter += 1
-    me ! GatherResults
+  def setGather(me: ActorRef, source : ActorRef) {
+    if(! gatherCounters.contains(source))
+      gatherCounters += source -> 0
+    gatherCounters += source -> (gatherCounters(source) + 1)
+    me ! GatherResults(source)
   }
 
-  def onGather(onLastGather: () => Unit) {
-    gatherCounter -= 1
-    if (gatherCounter == 0) {
+  def onGather(source : ActorRef, onLastGather: () => Unit) {
+    gatherCounters += source  -> (gatherCounters(source) -1)
+    if (gatherCounters(source) == 0) {
       onLastGather()
     }
   }

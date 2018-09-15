@@ -73,7 +73,7 @@ class GraphBuilder(filename: String) extends Actor with ActorLogging {
     }
     this.graph = null
 
-    log.info("Finished initializing agents: " + children.size)
+    log.info("Idle initializing agents: " + children.size)
   }
 
   def receive = {
