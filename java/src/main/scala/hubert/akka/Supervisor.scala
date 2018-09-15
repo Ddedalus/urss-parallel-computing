@@ -3,7 +3,7 @@ package hubert.akka
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import hubert.akka.Node.{Neighbours, DistanceEstimate, NewSource}
 import hubert.akka.GraphBuilder.{NodesCreated}
-import hubert.akka.Master.{CorrectBy, NotIdle}
+import hubert.akka.BulkMaster.{CorrectBy, NotIdle}
 
 object Supervisor {
   def props(nodes: Array[Int]): Props = Props(new Supervisor(nodes))
@@ -11,17 +11,10 @@ object Supervisor {
 
 class Supervisor(nodes: Array[Int])
     extends Actor
-    with AnswerCollecting
     with Gathering
     with SendingCorrections
     with ActorLogging {
   import Supervisor._
-
-
-// TODO:
-// top key is the active source ref
-// secondary key is node ref
-// active: SourceRef -> (idleCount, Map[NodeRef, NodeStatus])
 
   var children: Array[ActorRef] = nodes.map { id =>
     context.actorOf(Node.props, "n" + id)}
@@ -57,18 +50,18 @@ class Supervisor(nodes: Array[Int])
   def onLastGather(source : ActorRef): Unit = {
     var status = active(source)
     if (status.allIdle) {
-      log.info("Corrected parrent with {}", status.sumResults)
+      log.info("Corrected parrent with {}", status.getSum)
       context.parent ! CorrectBy(status.getCorrection, source)
     } else {
       log.info("Last gather when not everyone idle...")
-      setGather(self)
+      setGather(self, source)
     }
   }
 
   def receive = {
     case CorrectBy(diff, src) => onCorrectBy(diff, src)
-    case NotIdle          => onNotIdle
-    case GatherResults        => onGather(() => onLastGather())
+    case NotIdle(source)          => onNotIdle(source)
+    case GatherResults(source)        => onGather(source, source => onLastGather(source))
     case Node.NewSource(src)  => onNewSource(src)
     case RemoveSource(src) => active -= src
   }
