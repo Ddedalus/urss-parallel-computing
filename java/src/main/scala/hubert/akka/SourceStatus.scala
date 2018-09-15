@@ -4,7 +4,7 @@ import akka.actor.ActorRef
 
 // TODO: define node and source type aliases
 
-class SourceStatus(children_ : Array[ActorRef]) {
+class SourceStatus(children_ : Iterable[ActorRef]) {
   var idleCount = 0
   var announced = 0.0
   var children : Map[ActorRef, NodeStatus] = children_.map(ref => ref -> new NodeStatus()).toMap

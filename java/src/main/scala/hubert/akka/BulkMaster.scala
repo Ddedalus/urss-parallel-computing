@@ -6,92 +6,104 @@ import akka.actor.{
   ActorRef,
   ActorSystem,
   Props,
-  PoisonPill
+  PoisonPill,
+  Timers
 }
+import akka.util.Timeout
+import akka.pattern.ask
+
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
 
-import akka.util.Timeout
-import akka.pattern.ask
 
-object BulkMaster {
+trait ActorRefAliases {
+  type Node = ActorRef
+  type Source = ActorRef
+}
+
+object BulkMaster extends ActorRefAliases {
   def props(filename: String): Props = Props(new BulkMaster(filename))
-
+  final case class RequestASP(source: Int)
+  final case class UpdateEstimate(distance: Double, source: Source)
+  final case class NotIdle(source: Source)
+  final case class CorrectBy(diff: Double, source: Source)
+  case object TimedOut
   case object RequestBulk
 }
 
-class BulkMaster(filename: String) extends Master(filename) {
+class BulkMaster(filename: String)
+    extends GraphBuilder(filename)
+    with Gathering
+    with Timers
+    with ActorRefAliases {
   import BulkMaster._
   import hubert.akka.Supervisor._
+  timers.startSingleTimer(TimedOut, TimedOut, 20.seconds)
 
-  var idIter: Iterator[ActorRef] = _;
-  var newSource: ActorRef = _
-  var grandTotal: Double = _;
+  var idIter: Iterator[Source] = _
+  var grandTotal: Double = _
+  var active: Map[Source, SourceStatus] = _
 
-  override def onCorrectBy(diff: Double, source: ActorRef) {
-    if (source == this.source)
-      correctBy(diff, sender)
-    else {
+  def onCorrectBy(diff: Double, source: Source) {
+    if (active.contains(source)) {
+      var status = active(source)
+      status.putDiff(source, diff)
+      if (status.allIdle)
+        setGather(self, source)
+    } else {
       grandTotal += diff
-      log.info("Applied old source correction")
-    }
-    if (allIdle){
-      setGather(self)
+      log.warning("Applied old source correction")
     }
   }
 
-  override def onLastGather(): Unit = {
-    if (allIdle) {
-      // proclaimNewSource
-      log.info("Sum: {}", sumResults)
-    }else{
+  def onNotIdle(source: Source) {
+    var status = active(source)
+    status.setNotIdle(sender)
+  }
+
+  def onLastGather(source: Source): Unit = {
+    var status = active(source)
+    if (status.allIdle) {
+      log.info("Sum: {}", status.getSum)
+      grandTotal += status.getSum
+      active -= source
+      if (idIter.hasNext)
+        proclaimNewSource
+      else if (active.isEmpty) {
+        log.warning("Grand total: {}", grandTotal)
+        self ! PoisonPill
+      }
+    } else {
       log.warning("Last gather when not everyone idle")
-      setGather(self)
+      setGather(self, source)
     }
   }
 
   def proclaimNewSource() {
-    if (idIter.hasNext) {
-      this.newSource = idIter.next
-      // if(newSource.path.name == "n234" || newSource.path.name == "n1"){ 
-      //   log.warning("Skipping: " + newSource.path.name)
-      //   this.newSource = idIter.next}
+    if (!idIter.hasNext) return
+    val newSource = idIter.next
 
-      implicit val timeout = Timeout(2 seconds)
-      val futures = children.keys.map { _ ? Node.NewSource(newSource) }
-      Future.sequence(futures).onComplete {
-        case Success(list) => {
-          log.info("New source {}", newSource.path.name)
-          self ! Node.NewSource(this.newSource)
-          this.newSource ! Node.DistanceEstimate(0, newSource)
-
-        }
-        case Failure(e) => {
-          log.warning("Propagating new source timed out")
-          self ! PoisonPill
-        }
+    implicit val timeout = Timeout(2 seconds)
+    val futures = children.keys.map { _ ? Node.NewSource(newSource) }
+    Future.sequence(futures).onComplete {
+      case Success(list) => {
+        val newSource =
+          list.head.asInstanceOf[Supervisor.SourceRegistered].source
+        log.info("New source {}", newSource.path.name)
+        newSource ! Node.DistanceEstimate(0, newSource)
       }
-    } else {
-      grandTotal += sumResults
-      log.warning("Grand total: {}", grandTotal)
-      self ! PoisonPill
+      case Failure(e) => {
+        log.warning("Propagating new source timed out")
+        self ! PoisonPill
+      }
     }
+    active += (newSource -> new SourceStatus(children.keys))
   }
 
-  def onNewSource(src : ActorRef){
-    grandTotal += sumResults
-    cleanInfo
-    this.source = src
-  }
-
-  // not used
-  override def onUpdateEstimate(dist: Double, source: ActorRef): Unit = {
-    super.onUpdateEstimate(dist, source)
-    if (allIdle) {
-      gatherCounter += 1
-    }
+  override def postStop() {
+    context.system.terminate
   }
 
   override def receive = super.receive orElse {
@@ -103,6 +115,12 @@ class BulkMaster(filename: String) extends Master(filename) {
         proclaimNewSource
       }
     }
-    case Node.NewSource(src) => onNewSource(src)
+    case CorrectBy(diff, src) => onCorrectBy(diff, src)
+    case NotIdle(src)         => onNotIdle(src)
+    case GatherResults(src)   => onGather(src, src => onLastGather(src))
+    case TimedOut => {
+      log.info("System timed out");
+      context.system.terminate
+    }
   }
 }

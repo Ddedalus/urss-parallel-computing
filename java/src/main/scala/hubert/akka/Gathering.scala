@@ -12,10 +12,10 @@ trait Gathering {
     me ! GatherResults(source)
   }
 
-  def onGather(source : ActorRef, onLastGather: () => Unit) {
+  def onGather(source : ActorRef, onLastGather: (ActorRef) => Unit) {
     gatherCounters += source  -> (gatherCounters(source) -1)
     if (gatherCounters(source) == 0) {
-      onLastGather()
+      onLastGather(source)
     }
   }
 }
