@@ -1,6 +1,6 @@
 package hubert.akka
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
 import hubert.akka.Node.{Neighbours, DistanceEstimate, NewSource}
 import hubert.akka.GraphBuilder.{NodesCreated}
 import hubert.akka.BulkMaster.{CorrectBy, NotIdle}
@@ -11,24 +11,24 @@ object Supervisor {
 
 class Supervisor(nodes: Array[Int])
     extends Actor
+    with ActorRefAliases
     with Gathering
-    with SendingCorrections
     with ActorLogging {
   import Supervisor._
 
-  var children: Array[ActorRef] = nodes.map { id =>
+  var children: Array[Node] = nodes.map { id =>
     context.actorOf(Node.props, "n" + id)}
 
   context.parent ! NodesCreated
 
-  var active : Map[ActorRef, SourceStatus] = _
+  var active : Map[Node, SourceStatus] = _
 
-  def onNewSource(src: ActorRef) {
+  def onNewSource(src: Node) {
     active += (src -> new SourceStatus(children))
     sender ! true
   }
 
-  def onCorrectBy(diff: Double, source: ActorRef) {
+  def onCorrectBy(diff: Double, source: Node) {
     if (! active.contains(source)){
       log.warning("Correction on inactive source")
     } else {
@@ -40,14 +40,14 @@ class Supervisor(nodes: Array[Int])
     }
   }
 
-  def onNotIdle(source: ActorRef): Unit = {
+  def onNotIdle(source: Node): Unit = {
     var status = active(source)
     if (status.allIdle)
       context.parent ! NotIdle(source)
     status.setNotIdle(sender)
   }
 
-  def onLastGather(source : ActorRef): Unit = {
+  def onLastGather(source : Node): Unit = {
     var status = active(source)
     if (status.allIdle) {
       log.info("Corrected parrent with {}", status.getSum)

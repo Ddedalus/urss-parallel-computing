@@ -2,7 +2,7 @@ package hubert.akka
 
 import java.util.ArrayList
 
-import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
 
 //remove if not needed
 import scala.collection.JavaConversions._
@@ -20,30 +20,30 @@ class Status(dist: Double) { //with SendingCorrections
   }
 }
 
-object Node {
+object NodeAct extends ActorRefAliases {
 
-  def props: Props = Props(new Node())
+  def props: Props = Props(new NodeAct())
 
-  final case class Neighbours(neighbours: Array[ActorRef])
+  final case class Neighbours(neighbours: Array[Node])
 
-  final case class DistanceEstimate(distance: Double, src: ActorRef)
+  final case class DistanceEstimate(distance: Double, src: Source)
 
-  final case class NewSource(sourceId: ActorRef)
+  final case class NewSource(sourceId: Source)
 
-  final case class UpdateParent(source: ActorRef)
+  final case class UpdateParent(source: Source)
 
-  final case class Propagate(soruce: ActorRef)
+  final case class Propagate(soruce: Source)
 
 }
 
-class Node() extends Actor with ActorLogging {
-  import hubert.akka.Master.{NotIdle, CorrectBy}
-  import Node._
+class NodeAct() extends Actor with ActorLogging {
+  import hubert.akka.BulkMaster.{NotIdle, CorrectBy}
+  import NodeAct._
 
-  private var neigh: Array[ActorRef] = _
-  private var active: Map[ActorRef, Status] = _
+  private var neigh: Array[Node] = _
+  private var active: Map[Source, Status] = _
 
-  def onDistanceEstimate(distance: Double, src: ActorRef): Unit = {
+  def onDistanceEstimate(distance: Double, src: Source): Unit = {
     if (! active.contains(src)) { // check this against docs
       active += (src -> new Status(distance))
       self ! UpdateParent(src)
@@ -63,7 +63,7 @@ class Node() extends Actor with ActorLogging {
     }
   }
 
-  def onPropagate(src: ActorRef): Unit = {
+  def onPropagate(src: Source): Unit = {
     if (! active.contains(src))
       log.info("Error, propagating inactive source")
     else {
@@ -75,7 +75,7 @@ class Node() extends Actor with ActorLogging {
     }
   }
 
-  def onUpdateParent(src: ActorRef) {
+  def onUpdateParent(src: Source) {
     if (! active.contains(src))
       log.info("Error, updating inactive source")
     else {
