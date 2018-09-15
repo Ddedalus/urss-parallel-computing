@@ -19,9 +19,10 @@ object GraphBuilder {
 
 class GraphBuilder(filename: String) extends Actor with ActorLogging {
   import hubert.akka.ReadGraph._
+  import hubert.akka.Messages._
   import GraphBuilder._
   import hubert.akka.Supervisor._
-  import hubert.akka.Node.{Neighbours, DistanceEstimate, NewSource}
+  import hubert.akka.NodeAct.{Neighbours}
 
   var graph: Map[Int, Array[Int]] =
     ReadGraph
@@ -29,35 +30,20 @@ class GraphBuilder(filename: String) extends Actor with ActorLogging {
       .asScala
       .map({ case (id, neigh) => id.toInt -> neigh.map(_.toInt) }).toMap
 
-  var children: Map[ActorRef, NodeInfo] = _
   var nodesRef: Map[Int, ActorRef] = _
-  var childrenCount: Int = _
   var outside: ActorRef = ActorRef.noSender
 
-  if (graph.size < branching) {
-    log.info("No supervision needed")
-    children = graph.keys.map { id =>
-      context.actorOf(Node.props, "n" + id) -> new NodeInfo(id)
-    }.toMap
-    nodesRef = children.map{
-      case (ref, info) => info.id -> ref
-    }
-    self ! BuildGraph // ready to inform nodes
-  } else {
-    log.info("Supervision needed")
-    children = graph.keys.sliding(branching, branching).toList.zipWithIndex.map{
-      case (list, index) =>
-        context.actorOf(Supervisor.props(list.toArray), "s" + index) -> new NodeInfo(0)
-    }.toMap
-  } // now has to collect all responses
+  var supervisors: Array[ActorRef] =
+  graph.keys.sliding(branching, branching).toList.zipWithIndex.map{
+    case (list, index) =>
+      context.actorOf(Supervisor.props(list.toArray), "s" + index)
+  }.toArray
 
-  def onNodesCreated(refs: Map[Int, ActorRef]) {
-    if(nodesRef == null)
-      nodesRef = refs
-    else
-      nodesRef = nodesRef ++ refs;
-    childrenCount += 1
-    if (childrenCount == children.size) {
+  var supervisorsCount: Int = _
+  def onNodesCreated(refs: Map[Int, Node]) {
+    nodesRef = nodesRef ++ refs;
+    supervisorsCount += 1
+    if (supervisorsCount == supervisors.size) {
       self ! BuildGraph
     }
   }
@@ -73,7 +59,7 @@ class GraphBuilder(filename: String) extends Actor with ActorLogging {
     }
     this.graph = null
 
-    log.info("Idle initializing agents: " + children.size)
+    log.info("Idle initializing agents: " + supervisors.size)
   }
 
   def receive = {

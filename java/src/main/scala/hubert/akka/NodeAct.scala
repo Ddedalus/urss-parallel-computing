@@ -7,7 +7,7 @@ import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
 //remove if not needed
 import scala.collection.JavaConversions._
 
-class Status(dist: Double) { //with SendingCorrections
+class Status(dist: Double) { 
   var distance = dist
   var announced = 0.0
   var propagated = false
@@ -20,25 +20,20 @@ class Status(dist: Double) { //with SendingCorrections
   }
 }
 
-object NodeAct extends ActorRefAliases {
+object NodeAct extends CommonInterfaces {
 
   def props: Props = Props(new NodeAct())
 
   final case class Neighbours(neighbours: Array[Node])
 
   final case class DistanceEstimate(distance: Double, src: Source)
-
-  final case class NewSource(sourceId: Source)
-
-  final case class UpdateParent(source: Source)
-
   final case class Propagate(soruce: Source)
-
+  final case class UpdateParent(source: Source)
 }
 
 class NodeAct() extends Actor with ActorLogging {
-  import hubert.akka.BulkMaster.{NotIdle, CorrectBy}
   import NodeAct._
+  import Messages._
 
   private var neigh: Array[Node] = _
   private var active: Map[Source, Status] = _

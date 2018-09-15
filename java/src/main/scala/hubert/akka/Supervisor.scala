@@ -1,35 +1,37 @@
 package hubert.akka
 
 import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
-import hubert.akka.Node.{Neighbours, DistanceEstimate, NewSource}
-import hubert.akka.GraphBuilder.{NodesCreated}
-import hubert.akka.BulkMaster.{CorrectBy, NotIdle}
 
-object Supervisor {
-  def props(nodes: Array[Int]): Props = Props(new Supervisor(nodes))
+object Supervisor extends CommonInterfaces {
+  def props(nodes: Iterable[Int]): Props = Props(new Supervisor(nodes))
 }
 
-class Supervisor(nodes: Array[Int])
+class Supervisor(nodes: Iterable[Int])
     extends Actor
-    with ActorRefAliases
     with Gathering
     with ActorLogging {
   import Supervisor._
+  import GraphBuilder.{NodesCreated}
+  import NodeAct.{Neighbours}
+  import Messages._
 
-  var children: Array[Node] = nodes.map { id =>
-    context.actorOf(Node.props, "n" + id)}
+  var idMap: Map[Int, Node] = nodes.map { id =>
+    id -> context.actorOf(NodeAct.props, "n" + id)
+  }.toMap
+  var children: Array[Node] = idMap.values.toArray
 
-  context.parent ! NodesCreated
+  context.parent ! new NodesCreated(idMap)
+  idMap = null
 
-  var active : Map[Node, SourceStatus] = _
+  var active: Map[Node, SourceStatus] = _
 
-  def onNewSource(src: Node) {
-    active += (src -> new SourceStatus(children))
-    sender ! true
+  def onNewSource(source: Node) {
+    active += (source -> new SourceStatus(children))
+    sender ! SourceRegistered(source)
   }
 
   def onCorrectBy(diff: Double, source: Node) {
-    if (! active.contains(source)){
+    if (!active.contains(source)) {
       log.warning("Correction on inactive source")
     } else {
       var status = active(source)
@@ -47,7 +49,7 @@ class Supervisor(nodes: Array[Int])
     status.setNotIdle(sender)
   }
 
-  def onLastGather(source : Node): Unit = {
+  def onLastGather(source: Node): Unit = {
     var status = active(source)
     if (status.allIdle) {
       log.info("Corrected parrent with {}", status.getSum)
@@ -60,9 +62,10 @@ class Supervisor(nodes: Array[Int])
 
   def receive = {
     case CorrectBy(diff, src) => onCorrectBy(diff, src)
-    case NotIdle(source)          => onNotIdle(source)
-    case GatherResults(source)        => onGather(source, source => onLastGather(source))
-    case Node.NewSource(src)  => onNewSource(src)
-    case RemoveSource(src) => active -= src
+    case NotIdle(source)      => onNotIdle(source)
+    case GatherResults(source) =>
+      onGather(source, source => onLastGather(source))
+    case NewSource(src) => onNewSource(src)
+    case RemoveSource(src)      => active -= src
   }
 }

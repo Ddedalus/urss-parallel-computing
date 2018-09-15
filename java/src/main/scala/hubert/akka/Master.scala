@@ -1,80 +1,118 @@
 package hubert.akka
 
-import akka.actor.{Timers, Actor, ActorLogging, ActorRef, Props}
-import scala.concurrent.duration._
+import akka.actor.{
+  Actor,
+  ActorLogging,
+  ActorRef,
+  ActorSystem,
+  Props,
+  PoisonPill,
+  Timers
+}
+import akka.util.Timeout
+import akka.pattern.ask
 
-object Master {
+import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
+import ExecutionContext.Implicits.global
+import scala.util.{Success, Failure}
+
+object Master extends CommonInterfaces {
   def props(filename: String): Props = Props(new Master(filename))
   final case class RequestASP(source: Int)
-  final case class UpdateEstimate(distance: Double, source: ActorRef)
-  final case class NotIdle(source : ActorRef)
-  final case class CorrectBy(diff: Double, source: ActorRef)
   case object TimedOut
+  case object RequestBulk
 }
-
-
 
 class Master(filename: String)
     extends GraphBuilder(filename)
-    with AnswerCollecting
     with Gathering
     with Timers {
   import Master._
-  import hubert.akka.Node._
-
+  import Messages._
+  import hubert.akka.Supervisor._
   timers.startSingleTimer(TimedOut, TimedOut, 20.seconds)
 
+  var idIter: Iterator[Source] = _
+  var grandTotal: Double = _
+  var active: Map[Source, SourceStatus] = _
 
-  def onRequestASP(source: Int): Unit = {
-    this.source = this.nodesRef(source)
-    this.source ! NewSource(this.source)
-  }
-
-  def onUpdateEstimate(dist: Double, source: ActorRef): Unit = {
-    if (source != this.source) {
-      log.warning("Estimate on a wrong source: {}, instead of {}",
-                  source.path.name,
-                  this.source.path.name)
-      return
-    }
-    updateEstimate(dist, sender)
-
-    if (allIdle)
-      setGather(self)
-  }
-
-  def onCorrectBy(diff: Double, source: ActorRef) {
-    if (source == this.source)
-      correctBy(diff, sender)
-    else
-      log.warning("Correction from a wrong source")
-    if (allIdle) {
-      setGather(self)
+  def onCorrectBy(diff: Double, source: Source) {
+    if (active.contains(source)) {
+      var status = active(source)
+      status.putDiff(source, diff)
+      if (status.allIdle)
+        setGather(self, source)
+    } else {
+      grandTotal += diff
+      log.warning("Applied old source correction")
     }
   }
 
-  def onLastGather(): Unit = if (allIdle) {
-    log.info("SSP of {} = {}", source.path.name, sumResults)
+  def onNotIdle(source: Source) {
+    var status = active(source)
+    status.setNotIdle(sender)
   }
-  
+
+  def onLastGather(source: Source): Unit = {
+    var status = active(source)
+    if (status.allIdle) {
+      log.info("Sum: {}", status.getSum)
+      grandTotal += status.getSum
+      active -= source
+      supervisors.foreach { _ ! RemoveSource(source)}
+      if (idIter.hasNext)
+        proclaimNewSource
+      else if (active.isEmpty) {
+        log.warning("Grand total: {}", grandTotal)
+        self ! PoisonPill
+      }
+    } else {
+      log.warning("Last gather when not everyone idle")
+      setGather(self, source)
+    }
+  }
+
+  def proclaimNewSource() {
+    if (!idIter.hasNext) return
+    val newSource = idIter.next
+
+    implicit val timeout = Timeout(2 seconds)
+    var futures: Array[Future[Any]] =  supervisors.map { _ ? NewSource(newSource)}
+    Future.sequence(futures).onComplete {
+      case Success(list) => {
+        val newSource =
+          list.asInstanceOf[Array[SourceRegistered]].head.source
+        log.info("New source {}", newSource.path.name)
+        newSource ! NodeAct.DistanceEstimate(0, newSource)
+      }
+      case Failure(e) => {
+        log.warning("Propagating new source timed out")
+        self ! PoisonPill
+      }
+    }
+    active += (newSource -> new SourceStatus(supervisors))
+  }
+
   override def postStop() {
     context.system.terminate
   }
 
   override def receive = super.receive orElse {
-    case msg: RequestASP => {
-      if (graph != null) {
-        timers.startSingleTimer(NotIdle, msg, 500.millis)
-        log.warning("Not ready to accept Request yet...")
-      } else
-        onRequestASP(msg.source)
+    case RequestBulk => {
+      if (graph != null)
+        timers.startSingleTimer(RequestBulk, RequestBulk, 500.millis)
+      else {
+        idIter = super.nodesRef.values.iterator
+        proclaimNewSource
+      }
     }
-    case UpdateEstimate(dist, src) => onUpdateEstimate(dist, src)
-    case CorrectBy(diff, src)      => onCorrectBy(diff, src)
-    case NotIdle               => notIdle(sender)
-    case GatherResults             => onGather(() => onLastGather())
-    case TimedOut                => {
+    case CorrectBy(diff, src) => onCorrectBy(diff, src)
+    case NotIdle(src)         => onNotIdle(src)
+    case GatherResults(src)   => onGather(src, src => onLastGather(src))
+    case TimedOut => {
       log.info("System timed out");
-      context.system.terminate}
+      context.system.terminate
+    }
   }
 }
