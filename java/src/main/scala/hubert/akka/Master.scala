@@ -78,7 +78,8 @@ class Master(filename: String)
     val newSource = idIter.next
 
     implicit val timeout = Timeout(2 seconds)
-    var futures: Array[Future[Any]] =  supervisors.map { _ ? NewSource(newSource)}
+    var futures =  supervisors.map { _ ? NewSource(newSource)}.toList
+    // Wtf, Array is not traversable once?!
     Future.sequence(futures).onComplete {
       case Success(list) => {
         val newSource =
@@ -103,7 +104,7 @@ class Master(filename: String)
       if (graph != null)
         timers.startSingleTimer(RequestBulk, RequestBulk, 500.millis)
       else {
-        idIter = super.nodesRef.values.iterator
+        idIter = nodesRef.values.iterator
         proclaimNewSource
       }
     }

@@ -1,6 +1,8 @@
 name := "akka-asp"
 
 scalacOptions += "-deprecation"
+scalacOptions += "-unchecked"
+
 version := "1.0"
 
 scalaVersion := "2.12.6"
