@@ -4,7 +4,7 @@ import akka.actor.ActorRef
 
 trait CommonInterfaces {
   type Node = ActorRef
-  type Source = ActorRef
+  type Source = Int
 }
 
 object Messages extends CommonInterfaces{

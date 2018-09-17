@@ -40,7 +40,7 @@ class Master(filename: String)
   def onCorrectBy(diff: Double, source: Source) {
     if (active.contains(source)) {
       var status = active(source)
-      status.putDiff(source, diff)
+      status.putDiff(sender, diff)
       if (status.allIdle)
         setGather(self, source)
     } else {
@@ -84,8 +84,9 @@ class Master(filename: String)
       case Success(list) => {
         val newSource =
           list.asInstanceOf[List[SourceRegistered]].head.source
-        log.info("New source {}", newSource.path.name)
-        newSource ! NodeAct.DistanceEstimate(0, newSource)
+        val sourceRef = nodesRef(newSource)
+        log.info("New source {}", sourceRef.path.name)
+        sourceRef ! NodeAct.DistanceEstimate(0, newSource)
       }
       case Failure(e) => {
         log.warning("Propagating new source timed out")
@@ -104,7 +105,7 @@ class Master(filename: String)
       if (graph != null)
         timers.startSingleTimer(RequestBulk, RequestBulk, 500.millis)
       else {
-        idIter = nodesRef.values.iterator
+        idIter = nodesRef.keys.iterator
         proclaimNewSource
       }
     }
