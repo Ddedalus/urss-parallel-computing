@@ -3,7 +3,7 @@ import akka.actor.ActorRef
 
 trait Gathering {
   final case class GatherResults(source : ActorRef)
-  var gatherCounters: Map[ActorRef, Int] = _
+  var gatherCounters =Map[ActorRef, Int]()
 
   def setGather(me: ActorRef, source : ActorRef) {
     if(! gatherCounters.contains(source))
