@@ -45,9 +45,12 @@ class NodeAct() extends Actor with ActorLogging {
     } else {
       var status = active(source)
       status.newMessages = true
+      if (status.sentIdle) {
+        context.parent ! NotIdle(source)
+        status.sentIdle = false
+        self ! UpdateParent(source)
+      }
       if (status.distance > distance) {
-        if (status.sentIdle)
-          context.parent ! NotIdle(source)
         if (status.propagated)
           self ! Propagate(source)
 
