@@ -28,7 +28,7 @@ class Master(filename: String) extends GraphBuilder(filename) with Timers {
   import Master._
   import Messages._
   // TODO remove for production!!!
-  timers.startSingleTimer(TimedOut, TimedOut, 20.seconds)
+  timers.startSingleTimer(TimedOut, TimedOut, 10.seconds)
 
   var idIter: Iterator[Source] = _
   var grandTotal: Double = _
@@ -96,10 +96,6 @@ class Master(filename: String) extends GraphBuilder(filename) with Timers {
       }
     }
     active += (newSource -> new SourceStatus(supervisors))
-  }
-
-  override def postStop() {
-    context.system.terminate
   }
 
   override def receive = super.receive orElse {
