@@ -20,33 +20,35 @@ class Supervisor(nodes: Iterable[Int])
 
   context.parent ! new GraphBuilder.NodesCreated(idMap)
 
-  var active = Map[Node, SourceStatus]()
+  var active = Map[Source, SourceStatus]()
 
-  def onNewSource(source: Node) {
+  def onNewSource(source: Source) {
     active += (source -> new SourceStatus(children))
     sender ! SourceRegistered(source)
   }
 
-  def onCorrectBy(diff: Double, source: Node) {
+  def onCorrectBy(diff: Double, source: Source) {
     if (!active.contains(source)) {
       log.warning("Correction on inactive source")
     } else {
       var status = active(source)
       status.putDiff(sender, diff)
       if (status.allIdle) {
+        log.info("Self: " + self)
+        log.info("Source: " + source)
         setGather(self, source)
       }
     }
   }
 
-  def onNotIdle(source: Node): Unit = {
+  def onNotIdle(source: Source): Unit = {
     var status = active(source)
     if (status.allIdle) // this should actually check if a message was sent, but a good proxy here
       context.parent ! NotIdle(source)
     status.setNotIdle(sender)
   }
 
-  def onLastGather(source: Node): Unit = {
+  def onLastGather(source: Source): Unit = {
     var status = active(source)
     if (status.allIdle) {
       context.parent ! CorrectBy(status.getCorrection, source)
