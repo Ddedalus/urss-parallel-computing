@@ -90,3 +90,4 @@ java/sbt
 java/sbt-dist/
 java/ensime-langserver.log
 java/pc.stdout.log
+java/c:/logs/akka.log
