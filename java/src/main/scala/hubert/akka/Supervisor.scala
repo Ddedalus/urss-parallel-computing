@@ -34,8 +34,6 @@ class Supervisor(nodes: Iterable[Int])
       var status = active(source)
       status.putDiff(sender, diff)
       if (status.allIdle) {
-        log.info("Self: " + self)
-        log.info("Source: " + source)
         setGather(self, source)
       }
     }
