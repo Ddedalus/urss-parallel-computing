@@ -19,15 +19,12 @@ import scala.util.{Success, Failure}
 
 object Master extends CommonInterfaces {
   def props(filename: String): Props = Props(new Master(filename))
-  final case class RequestASP(source: Int)
+  final case class GatherResults(source: Source)
   case object TimedOut
   case object RequestBulk
 }
 
-class Master(filename: String)
-    extends GraphBuilder(filename)
-    with Gathering
-    with Timers {
+class Master(filename: String) extends GraphBuilder(filename) with Timers {
   import Master._
   import Messages._
   // TODO remove for production!!!
@@ -42,7 +39,7 @@ class Master(filename: String)
       var status = active(source)
       status.putDiff(sender, diff)
       if (status.allIdle)
-        setGather(self, source)
+        self ! GatherResults(source)
     } else {
       grandTotal += diff
       log.warning("Applied old source correction")
@@ -54,31 +51,36 @@ class Master(filename: String)
     status.setNotIdle(sender)
   }
 
-  def onLastGather(source: Source): Unit = {
+  def onDelayedGather(source: Source) {
     var status = active(source)
-    if (status.allIdle) {
-      log.info("Sum: {}", status.getSum)
+    if (!status.allIdle)
+      return
+
+    if (!status.steady) {
+      status.steady = true
+      timers.startSingleTimer(source , GatherResults(source), 10.millis)
+    } else {
       grandTotal += status.getSum
       active -= source
-      supervisors.foreach { _ ! RemoveSource(source)}
-      if (idIter.hasNext)
-        proclaimNewSource
-      else if (active.isEmpty) {
-        log.warning("Grand total: {}", grandTotal)
-        self ! PoisonPill
-      }
-    } else {
-      log.warning("Last gather when not everyone idle")
-      // setGather(self, source)
+      log.info("s{}: {}; active: {}", source, status.getSum, active.keys)
+      supervisors.foreach { _ ! RemoveSource(source) }
+      proclaimNewSource
     }
   }
 
   def proclaimNewSource() {
-    if (!idIter.hasNext) return
+    if (active.isEmpty && grandTotal > 0) {
+      log.warning("Grand total: {}", grandTotal)
+      self ! PoisonPill
+    }
+
+    if (!idIter.hasNext)
+      return
+
     val newSource = idIter.next
 
-    implicit val timeout = Timeout(2 seconds)
-    var futures =  supervisors.map { _ ? NewSource(newSource)}.toList
+    implicit val timeout = Timeout(1 seconds)
+    var futures = supervisors.map { _ ? NewSource(newSource) }.toList
     // Wtf, Array is not traversable once?!
     Future.sequence(futures).onComplete {
       case Success(list) => {
@@ -106,13 +108,20 @@ class Master(filename: String)
         timers.startSingleTimer(RequestBulk, RequestBulk, 500.millis)
       else {
         idIter = nodesRef.keys.iterator
-        proclaimNewSource
+        for(i <- 1 to 5) proclaimNewSource
       }
     }
     case CorrectBy(diff, src) => onCorrectBy(diff, src)
     case NotIdle(src)         => onNotIdle(src)
-    case GatherResults(src)   => onGather(src, src => onLastGather(src))
+    case GatherResults(src)   => onDelayedGather(src)
     case TimedOut => {
+      for((id, s) <- active){
+        log.info("\nactive: {}\n"+
+                  "idle count: {}/{}\n"+
+                  "not idle: {}\n",
+                  id, s.idleCount, s.children.size,
+                  s.children.filter(ns => ns._2.idle == false).keys.map(ar => ar.path.name).mkString(","))
+      }
       log.info("System timed out");
       context.system.terminate
     }
