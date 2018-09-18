@@ -15,5 +15,5 @@ object AkkaASP extends App {
   val filename = "/home/hubert/Code/Warwick/BSP/data/newcastle/n3.edges"
   val system: ActorSystem = ActorSystem("asp")  
   val master = system.actorOf(Master.props(filename), "master")
-  master ! RequestBulk
+  
 }

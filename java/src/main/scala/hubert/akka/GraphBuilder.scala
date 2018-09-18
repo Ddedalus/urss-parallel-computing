@@ -12,6 +12,7 @@ object GraphBuilder {
   final case class NodesCreated(refs: Map[Int, ActorRef])
 
   case object BuildGraph
+  case object GraphReady
 
   val branching: Int = 100
 
@@ -55,6 +56,7 @@ class GraphBuilder(filename: String) extends Actor with ActorLogging {
       }
     }
     this.graph = null
+    self ! GraphReady
 
     log.info("Finished initializing supervisors: " + supervisors.size)
   }

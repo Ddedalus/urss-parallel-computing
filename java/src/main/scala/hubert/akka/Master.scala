@@ -25,7 +25,6 @@ object Master extends CommonInterfaces {
   final case class ProclaimNewSource(a: Int)
   case object CheckQueue
   case object TimedOut
-  case object RequestBulk
 }
 
 class Master(filename: String)
@@ -138,14 +137,10 @@ class Master(filename: String)
 
   override def receive = super.receive orElse {
     case CheckQueue => onQueueCheck; addSources
-    case RequestBulk => {
-      if (graph != null)
-        timers.startSingleTimer(RequestBulk, RequestBulk, 200.millis)
-      else {
+    case GraphBuilder.GraphReady => {
         idIter = nodesRef.keys.iterator
         timers.startPeriodicTimer(CheckQueue, CheckQueue, QueueCheckingPeriod)
       }
-    }
     case CorrectBy(diff, src) => onCorrectBy(diff, src)
     case NotIdle(src)         => onNotIdle(src)
     case ProclaimNewSource(a) => proclaimNewSource()
