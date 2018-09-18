@@ -8,12 +8,10 @@ import akka.actor.ActorRef
 class SourceStatus(children_ : Iterable[ActorRef]) {
   var idleCount = 0
   var announced = 0.0
-  var steady = false
   var children : Map[ActorRef, NodeStatus] = children_.map(ref => ref -> new NodeStatus()).toMap
                     // node -> status
 
   def putDiff(nodeRef : ActorRef, diff : Double){
-   steady = false
     val node = children(nodeRef)
     node.distance += diff
     if(!node.idle){
@@ -23,7 +21,6 @@ class SourceStatus(children_ : Iterable[ActorRef]) {
   }
 
   def setNotIdle(nodeRef : ActorRef){
-    steady = false
     val node = children(nodeRef)
     if(node.idle){
       node.idle = false
