@@ -60,7 +60,7 @@ class Master(filename: String)
 
       active -= s
       idleQueue -= s
-      log.info("ans s{}: {}", s, status.getSum)
+      // log.info("ans s{}: {}", s, status.getSum)
     }
   }
 

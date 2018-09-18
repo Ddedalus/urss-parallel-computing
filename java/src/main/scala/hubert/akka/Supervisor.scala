@@ -50,7 +50,7 @@ class Supervisor(nodes: Iterable[Int])
     var status = active(source)
     if (status.allIdle) {
       context.parent ! CorrectBy(status.getCorrection, source)
-      log.info("Passed s{}: {}", source, status.getSum)
+      // log.info("Passed s{}: {}", source, status.getSum)
     } else {
       log.info("Last gather when not all idle: s{}", source)
       // setGather(self, source)
