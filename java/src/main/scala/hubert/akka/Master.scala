@@ -7,8 +7,7 @@ import akka.actor.{
   ActorSystem,
   Props,
   PoisonPill,
-  Timers,
-  StoppingSupervisorStrategy
+  Timers
 }
 import akka.util.Timeout
 import akka.pattern.ask
@@ -25,21 +24,19 @@ import akka.event.LogSource
 object Master extends CommonInterfaces {
   def props(filename: String): Props = Props(new Master(filename))
   final case class GatherResults(source: Source)
-  final case class ProclaimNewSource(a:Int)
+  final case class ProclaimNewSource(a: Int)
   case object TimedOut
   case object RequestBulk
 }
 
-class Master(filename: String) extends GraphBuilder(filename) with Timers {
+class Master(filename: String)
+    extends GraphBuilder(filename)
+    with Timers
+    with SupervisionStrategy {
   import Master._
   import Messages._
+  import Params._ 
 
-  import akka.actor.AllForOneStrategy
-  import akka.actor.SupervisorStrategy._
-  override val supervisorStrategy =
-    AllForOneStrategy(maxNrOfRetries = 0, withinTimeRange = 1.milli) {
-      case e: Exception => Stop
-    }
   // TODO remove for production!!!
   timers.startSingleTimer(TimedOut, TimedOut, 10.seconds)
 
@@ -114,7 +111,7 @@ class Master(filename: String) extends GraphBuilder(filename) with Timers {
           list.asInstanceOf[List[SourceRegistered]].head.source
         var sourceRef = nodesRef(newSource)
         this.active += (newSource -> new SourceStatus(supervisors))
-        if(! active.contains(newSource)){
+        if (!active.contains(newSource)) {
           log.error("Source {} not added to active!", newSource)
           self ! PoisonPill
         }
@@ -138,8 +135,10 @@ class Master(filename: String) extends GraphBuilder(filename) with Timers {
         timers.startSingleTimer(RequestBulk, RequestBulk, 200.millis)
       else {
         idIter = nodesRef.keys.iterator
-        for (i <- 0 to 7) {
-          timers.startSingleTimer(ProclaimNewSource(i), ProclaimNewSource(i), (i*50).millis)
+        for (i <- 0 to ActiveMaxSize -1) {
+          timers.startSingleTimer(ProclaimNewSource(i),
+                                  ProclaimNewSource(i),
+                                  (i * 50).millis)
         }
       }
     }
@@ -148,12 +147,20 @@ class Master(filename: String) extends GraphBuilder(filename) with Timers {
     case GatherResults(src)   => onDelayedGather(src)
     case ProclaimNewSource(a) => proclaimNewSource
     case TimedOut => {
-      for((id, s) <- active){
-        log.info("\nactive: {}\n"+
-                  "idle count: {}/{}\n"+
-                  "not idle: {}\n",
-                  id, s.idleCount, s.children.size,
-                  s.children.filter(ns => ns._2.idle == false).keys.map(ar => ar.path.name).mkString(","))
+      for ((id, s) <- active) {
+        log.info(
+          "\nactive: {}\n" +
+            "idle count: {}/{}\n" +
+            "not idle: {}\n",
+          id,
+          s.idleCount,
+          s.children.size,
+          s.children
+            .filter(ns => ns._2.idle == false)
+            .keys
+            .map(ar => ar.path.name)
+            .mkString(",")
+        )
       }
       log.info("System timed out");
       context.system.terminate
