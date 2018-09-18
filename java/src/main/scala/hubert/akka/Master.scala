@@ -35,7 +35,7 @@ class Master(filename: String)
     with SupervisionStrategy {
   import Master._
   import Messages._
-  import Params._ 
+  import Params._
 
   // TODO remove for production!!!
   timers.startSingleTimer(TimedOut, TimedOut, 10.seconds)
@@ -111,13 +111,12 @@ class Master(filename: String)
       log.warning("Grand total: {}", grandTotal)
       self ! PoisonPill
     }
-
+    implicit val timeout = Timeout(PropagationTimeout)
     if (!idIter.hasNext)
       return
 
     var source = idIter.next
 
-    implicit val timeout = Timeout(1 seconds)
     var futures = supervisors.map { _ ? NewSource(source) }.toList
     // Wtf, Array is not traversable once?!
     Future.sequence(futures).onComplete {

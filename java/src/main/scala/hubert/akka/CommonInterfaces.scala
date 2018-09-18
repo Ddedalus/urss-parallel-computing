@@ -20,9 +20,10 @@ object Messages extends CommonInterfaces{
 object Params extends CommonInterfaces{
   import scala.concurrent.duration._
   val QueueCheckingPeriod = 50.millis
-  val SourceInactivityRequired: Millis = 500
+  val SourceInactivityRequired: Millis = 300
   val DelayBetweenInitSources = 20.millis
-  val ActiveMaxSize = 20
+  val PropagationTimeout = 1.second
+  val ActiveMaxSize = 10
 }
 
 trait SupervisionStrategy extends Actor{
