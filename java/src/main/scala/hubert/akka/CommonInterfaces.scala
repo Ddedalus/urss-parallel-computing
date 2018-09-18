@@ -23,7 +23,8 @@ object Params extends CommonInterfaces{
   val SourceInactivityRequired: Millis = 300
   val DelayBetweenInitSources = 20.millis
   val PropagationTimeout = 1.second
-  val ActiveMaxSize = 10
+  val SystemTimeout = 30.second
+  val ActiveMaxSize = 100
 }
 
 trait SupervisionStrategy extends Actor{

@@ -37,7 +37,7 @@ class Master(filename: String)
   import Params._
 
   // TODO remove for production!!!
-  timers.startSingleTimer(TimedOut, TimedOut, 10.seconds)
+  timers.startSingleTimer(TimedOut, TimedOut, SystemTimeout)
 
   var idIter: Iterator[Source] = _
   var grandTotal: Double = _
@@ -60,7 +60,7 @@ class Master(filename: String)
 
       active -= s
       idleQueue -= s
-      log.info("ans s{}: {};\nactive:\t{}", s, status.getSum, active.keys)
+      log.info("ans s{}: {}", s, status.getSum)
     }
   }
 
@@ -74,7 +74,7 @@ class Master(filename: String)
     }
 
     if (active.isEmpty && idleQueue.isEmpty && grandTotal > 0) {
-      log.warning("\n\n\tGrand total: {}\n\n", grandTotal)
+      log.warning(" \n \n \tGrand total: {} \n \n ", grandTotal)
       context.system.terminate
     }
   }
