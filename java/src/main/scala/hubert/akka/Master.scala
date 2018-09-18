@@ -22,7 +22,6 @@ import akka.event.LogSource
 
 object Master extends CommonInterfaces {
   def props(filename: String): Props = Props(new Master(filename))
-  final case class GatherResults(source: Source)
   final case class ProclaimNewSource(a: Int)
   case object CheckQueue
   case object TimedOut
@@ -39,20 +38,44 @@ class Master(filename: String)
 
   // TODO remove for production!!!
   timers.startSingleTimer(TimedOut, TimedOut, 10.seconds)
-  timers.startPeriodicTimer(CheckQueue, CheckQueue, QueueCheckingPeriod)
 
   var idIter: Iterator[Source] = _
   var grandTotal: Double = _
   var active = scala.collection.concurrent.TrieMap[Source, SourceStatus]()
   var idleQueue = scala.collection.mutable.LinkedHashMap[Source, Millis]()
 
-  def onQueueCheck(){
+  def onQueueCheck() {
     var now = System.currentTimeMillis()
-    while(! idleQueue.isEmpty){
+    while (!idleQueue.isEmpty) {
       var (s, t) = idleQueue.head
-      if(t + SourceInactivityRequired > now) return
-      log.info("Source {} idle for {}", s, now-t)
+      if (t + SourceInactivityRequired > now) return
+      var status = active(s)
+      if (!status.allIdle) {
+        log.error("Source {} not idle after delay {}ms!", s, now - t)
+        self ! PoisonPill
+        return
+      }
+      grandTotal += status.getSum
+      supervisors.foreach { _ ! RemoveSource(s) }
+
+      active -= s
       idleQueue -= s
+      log.info("ans s{}: {};\nactive:\t{}", s, status.getSum, active.keys)
+    }
+  }
+
+  def addSources() {
+    if (active.size >= ActiveMaxSize) return
+
+    while (idIter.hasNext && active.size < ActiveMaxSize) {
+      var source = idIter.next
+      active += (source -> new SourceStatus(supervisors))
+      proclaimNewSource(source)
+    }
+
+    if (active.isEmpty && idleQueue.isEmpty && grandTotal > 0) {
+      log.warning("\n\n\tGrand total: {}\n\n", grandTotal)
+      context.system.terminate
     }
   }
 
@@ -60,10 +83,8 @@ class Master(filename: String)
     if (active.contains(source)) {
       var status = active(source)
       status.putDiff(sender, diff)
-      if (status.allIdle){
-        self ! GatherResults(source)
+      if (status.allIdle)
         idleQueue += source -> System.currentTimeMillis()
-      }
     } else {
       log.error("Unknown correction source: {} from {}\n active:\t{}",
                 source,
@@ -84,39 +105,15 @@ class Master(filename: String)
     status.setNotIdle(sender)
   }
 
-  def onDelayedGather(source: Source) {
-    if (!active.contains(source)) {
-      log.error("DG Missing: {},\nactive:\t{}", source, active.keys)
-      self ! PoisonPill
-      return
-    }
-    var status = active(source)
-    if (!status.allIdle)
-      return
+  def proclaimNewSource(inputSrc: Source = -1): Source = {
+    var source = inputSrc
 
-    if (!status.steady) {
-      status.steady = true
-      timers.startSingleTimer(source, GatherResults(source), 300.millis)
-    } else {
-      grandTotal += status.getSum
-      active -= source
-      log.info("ans s{}: {};\nactive:\t{}", source, status.getSum, active.keys)
-      supervisors.foreach { _ ! RemoveSource(source) }
-      proclaimNewSource
-    }
-  }
+    if (!idIter.hasNext && source == -1)
+      return -1
+    else if (source == -1)
+      source = idIter.next
 
-  def proclaimNewSource() {
-    if (active.isEmpty && grandTotal > 0 && !idIter.hasNext) {
-      log.warning("Grand total: {}", grandTotal)
-      self ! PoisonPill
-    }
     implicit val timeout = Timeout(PropagationTimeout)
-    if (!idIter.hasNext)
-      return
-
-    var source = idIter.next
-
     var futures = supervisors.map { _ ? NewSource(source) }.toList
     // Wtf, Array is not traversable once?!
     Future.sequence(futures).onComplete {
@@ -124,59 +121,35 @@ class Master(filename: String)
         var newSource =
           list.asInstanceOf[List[SourceRegistered]].head.source
         var sourceRef = nodesRef(newSource)
-        active += (newSource -> new SourceStatus(supervisors))
-        if (!active.contains(newSource)) {
-          log.error("Source {} not added to active!", newSource)
-          self ! PoisonPill
-        }
-        log.info("New source: {}\nactive:\t{}", newSource, active.keys)
         sourceRef ! NodeAct.DistanceEstimate(0, newSource)
       }
       case Failure(e) => {
-        log.warning("Propagating new source timed out")
+        log.error("Propagating new source timed out")
         self ! PoisonPill
       }
     }
+    return source
   }
+
   override def preRestart(reason: Throwable, message: Option[Any]) {
     log.error("Attempted master restart")
     context.system.terminate
   }
 
   override def receive = super.receive orElse {
-    case CheckQueue => onQueueCheck
+    case CheckQueue => onQueueCheck; addSources
     case RequestBulk => {
       if (graph != null)
         timers.startSingleTimer(RequestBulk, RequestBulk, 200.millis)
       else {
         idIter = nodesRef.keys.iterator
-        for (i <- 0 to ActiveMaxSize -1) {
-          timers.startSingleTimer(ProclaimNewSource(i),
-                                  ProclaimNewSource(i),
-                                  (i * 50).millis)
-        }
+        timers.startPeriodicTimer(CheckQueue, CheckQueue, QueueCheckingPeriod)
       }
     }
     case CorrectBy(diff, src) => onCorrectBy(diff, src)
     case NotIdle(src)         => onNotIdle(src)
-    case GatherResults(src)   => onDelayedGather(src)
-    case ProclaimNewSource(a) => proclaimNewSource
+    case ProclaimNewSource(a) => proclaimNewSource()
     case TimedOut => {
-      for ((id, s) <- active) {
-        log.info(
-          "\nactive: {}\n" +
-            "idle count: {}/{}\n" +
-            "not idle: {}\n",
-          id,
-          s.idleCount,
-          s.children.size,
-          s.children
-            .filter(ns => ns._2.idle == false)
-            .keys
-            .map(ar => ar.path.name)
-            .mkString(",")
-        )
-      }
       log.info("System timed out");
       context.system.terminate
     }
