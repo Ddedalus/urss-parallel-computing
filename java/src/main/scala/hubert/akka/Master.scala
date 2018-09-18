@@ -1,7 +1,6 @@
 package hubert.akka
 
 import akka.actor.{
-  Actor,
   ActorLogging,
   ActorRef,
   ActorSystem,
@@ -25,6 +24,7 @@ object Master extends CommonInterfaces {
   def props(filename: String): Props = Props(new Master(filename))
   final case class GatherResults(source: Source)
   final case class ProclaimNewSource(a: Int)
+  case object CheckQueue
   case object TimedOut
   case object RequestBulk
 }
@@ -39,17 +39,31 @@ class Master(filename: String)
 
   // TODO remove for production!!!
   timers.startSingleTimer(TimedOut, TimedOut, 10.seconds)
+  timers.startPeriodicTimer(CheckQueue, CheckQueue, QueueCheckingPeriod)
 
   var idIter: Iterator[Source] = _
   var grandTotal: Double = _
   var active = scala.collection.concurrent.TrieMap[Source, SourceStatus]()
+  var idleQueue = scala.collection.mutable.LinkedHashMap[Source, Millis]()
+
+  def onQueueCheck(){
+    var now = System.currentTimeMillis()
+    while(! idleQueue.isEmpty){
+      var (s, t) = idleQueue.head
+      if(t + SourceInactivityRequired > now) return
+      log.info("Source {} idle for {}", s, now-t)
+      idleQueue -= s
+    }
+  }
 
   def onCorrectBy(diff: Double, source: Source) {
     if (active.contains(source)) {
       var status = active(source)
       status.putDiff(sender, diff)
-      if (status.allIdle)
+      if (status.allIdle){
         self ! GatherResults(source)
+        idleQueue += source -> System.currentTimeMillis()
+      }
     } else {
       log.error("Unknown correction source: {} from {}\n active:\t{}",
                 source,
@@ -66,6 +80,7 @@ class Master(filename: String)
       return
     }
     var status = active(source)
+    idleQueue -= source
     status.setNotIdle(sender)
   }
 
@@ -110,7 +125,7 @@ class Master(filename: String)
         var newSource =
           list.asInstanceOf[List[SourceRegistered]].head.source
         var sourceRef = nodesRef(newSource)
-        this.active += (newSource -> new SourceStatus(supervisors))
+        active += (newSource -> new SourceStatus(supervisors))
         if (!active.contains(newSource)) {
           log.error("Source {} not added to active!", newSource)
           self ! PoisonPill
@@ -130,6 +145,7 @@ class Master(filename: String)
   }
 
   override def receive = super.receive orElse {
+    case CheckQueue => onQueueCheck
     case RequestBulk => {
       if (graph != null)
         timers.startSingleTimer(RequestBulk, RequestBulk, 200.millis)

@@ -1,6 +1,6 @@
 package hubert.akka
 
-import akka.actor.ActorRef
+import akka.actor.{Actor, ActorRef}
 
 trait CommonInterfaces {
   type Node = ActorRef
@@ -18,13 +18,15 @@ object Messages extends CommonInterfaces{
 }
 
 object Params extends CommonInterfaces{
-  val QueueCheckingPeriod : Millis = 50
+  import scala.concurrent.duration._
+  val QueueCheckingPeriod = 50.millis
   val SourceInactivityRequired: Millis = 500
-  val DelayBetweenInitSources: Millis = 20
+  val DelayBetweenInitSources = 20.millis
   val ActiveMaxSize = 20
 }
 
 trait SupervisionStrategy extends Actor{
+  import scala.concurrent.duration._
   import akka.actor.AllForOneStrategy
   import akka.actor.SupervisorStrategy._
   override val supervisorStrategy =
