@@ -13,7 +13,7 @@ object AkkaASP extends App {
     'ActiveMaxSize -> 100,
     'SourceInactivity -> 300.millis,
     'SystemTimeout -> 30.second,
-    'PropagationTimeout -> 1.second,
+    'PropagationTimeout -> 1000.milli,
     'QueueCheckPeriod -> 50.millis,
     'DelayBetweenInitSources -> 20.millis,
     'LogFile -> "./sample_aspLog.log"
@@ -76,15 +76,17 @@ object AkkaASP extends App {
   println("Options:")
   options.foreach(println)
 
+  if(! options.contains('GraphPath)){
+    print("Please specify a path to graph file!")
+    sys.exit(2)
+  }
+
   // Kamon.addReporter(new PrometheusReporter())
   // Kamon.addReporter(new ZipkinReporter())
 
-  // val filename = "/home/hubert/Code/Warwick/BSP/data/sample/sample.graph.txt"
-// implicit val system: ActorSystem = ...
   // val filename = "/home/hubert/Code/Warwick/BSP/data/newcastle/n3.edges"
-  // implicit val system: ActorSystem = ActorSystem("asp")
-  // implicit val i = inbox()
-  // val master = system.actorOf(Master.props(filename), "master")
+  val system: ActorSystem = ActorSystem("asp")
+  val master = system.actorOf(Master.props(options), "master")
   // val reply = i.receive()
   // val transformedReply = i.select(DefaultParams.SystemTimeout) {
   //   case Master.Answer(tot) => print("Received answer: %d".format(tot))

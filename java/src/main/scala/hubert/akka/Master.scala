@@ -21,33 +21,34 @@ import scala.util.{Success, Failure}
 import akka.event.LogSource
 
 object Master extends CommonInterfaces {
-  def props(filename: String): Props = Props(new Master(filename))
+  def props(opts: Map[Symbol, Any]): Props = Props(new Master(opts))
   final case class ProclaimNewSource(a: Int)
   case object CheckQueue
   case object TimedOut
 }
 
-class Master(filename: String)
-    extends GraphBuilder(filename)
+class Master(opts: Map[Symbol, Any])
+    extends GraphBuilder(opts('GraphPath).asInstanceOf[String])
     with Timers
     with SupervisionStrategy {
   import Master._
   import Messages._
-  import Params._
 
   // TODO remove for production!!!
-  timers.startSingleTimer(TimedOut, TimedOut, SystemTimeout)
+  timers.startSingleTimer(TimedOut, TimedOut, opts('SystemTimeout).asInstanceOf[FiniteDuration])
 
   var idIter: Iterator[Source] = _
   var grandTotal: Double = _
   var active = scala.collection.concurrent.TrieMap[Source, SourceStatus]()
   var idleQueue = scala.collection.mutable.LinkedHashMap[Source, Millis]()
 
+  val QueueDelay = opts('SourceInactivity).asInstanceOf[FiniteDuration].toMillis
+
   def onQueueCheck() {
     var now = System.currentTimeMillis()
     while (!idleQueue.isEmpty) {
       var (s, t) = idleQueue.head
-      if (t + SourceInactivityRequired > now) return
+      if (t + QueueDelay > now) return
       var status = active(s)
       if (!status.allIdle) {
         log.error("Source {} not idle after delay {}ms!", s, now - t)
@@ -64,9 +65,9 @@ class Master(filename: String)
   }
 
   def addSources() {
-    if (active.size >= ActiveMaxSize) return
+    if (active.size >= opts('ActiveMaxSize).asInstanceOf[Int]) return
 
-    while (idIter.hasNext && active.size < ActiveMaxSize) {
+    while (idIter.hasNext && active.size < opts('ActiveMaxSize).asInstanceOf[Int]) {
       var source = idIter.next
       active += (source -> new SourceStatus(supervisors))
       proclaimNewSource(source)
@@ -112,7 +113,7 @@ class Master(filename: String)
     else if (source == -1)
       source = idIter.next
 
-    implicit val timeout = Timeout(PropagationTimeout)
+    implicit val timeout = Timeout(opts('PropagationTimeout).asInstanceOf[FiniteDuration])
     var futures = supervisors.map { _ ? NewSource(source) }.toList
     // Wtf, Array is not traversable once?!
     Future.sequence(futures).onComplete {
@@ -139,7 +140,7 @@ class Master(filename: String)
     case CheckQueue => onQueueCheck; addSources
     case GraphBuilder.GraphReady => {
         idIter = nodesRef.keys.iterator
-        timers.startPeriodicTimer(CheckQueue, CheckQueue, QueueCheckingPeriod)
+        timers.startPeriodicTimer(CheckQueue, CheckQueue, opts('QueueCheckPeriod).asInstanceOf[FiniteDuration])
       }
     case CorrectBy(diff, src) => onCorrectBy(diff, src)
     case NotIdle(src)         => onNotIdle(src)

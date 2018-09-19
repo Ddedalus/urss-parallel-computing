@@ -17,16 +17,6 @@ object Messages extends CommonInterfaces{
   final case class NewSource(source : Source)
 }
 
-object Params extends CommonInterfaces{
-  import scala.concurrent.duration._
-  val QueueCheckingPeriod = 50.millis
-  val SourceInactivityRequired: Millis = 300
-  val DelayBetweenInitSources = 20.millis
-  val PropagationTimeout = 1.second
-  val SystemTimeout = 30.second
-  val ActiveMaxSize = 100
-}
-
 trait SupervisionStrategy extends Actor{
   import scala.concurrent.duration._
   import akka.actor.AllForOneStrategy
