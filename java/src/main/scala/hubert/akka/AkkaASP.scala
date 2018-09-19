@@ -15,26 +15,30 @@ object AkkaASP extends App {
     'SystemTimeout -> 30.second,
     'PropagationTimeout -> 1.second,
     'QueueCheckPeriod -> 50.millis,
-    'DelayBetweenInitSources -> 20.millis
+    'DelayBetweenInitSources -> 20.millis,
+    'LogFile -> "./sample_aspLog.log"
   )
 
   val usage
     : String = ("As a first argument, please specify path to a graph file\n\n" +
     "The following switches and defaults are available:\n" +
-    "  switch            \t default \t description\n" +
-    "--active-max-size\t-a \t %s \t Maximal number of parallel searches to be performed\n" +
-    "--source-inactivity\t-i \t %s \t how long source should stay in idleQueue\n" +
-    "--system-timeout\t-s \t %s \t after this time, ActorSystem will be terminated\n" +
-    "--propagation-timeout\t-p \t %s \t Future timeout for notifying Supervisors about new source\n" +
-    "--queue-check-period\t-s \t %s \t how often to check idleQueue\n" +
-    "--delay-between-init\t-d \t %s \t To begin, several sources are spawned at once. This option introduces a delay between them.\n")
+    "  switch                 default\t  description\n" +
+    "--active-max-size     -a\t%s\t\tMaximal number of parallel searches to be performed\n" +
+    "--source-inactivity   -i\t%s\thow long source should stay in idleQueue\n" +
+    "--system-timeout      -s\t%s\tafter this time, ActorSystem will be terminated\n" +
+    "--propagation-timeout -p\t%s\tFuture timeout for notifying Supervisors about new source\n" +
+    "--queue-check-period  -s\t%s\thow often to check idleQueue\n" +
+    "--delay-between-init  -d\t%s\tTo begin, several sources are spawned at once. This option introduces a delay between them.\n" +
+    "--log-path            -l\t%s\tFile to append with result, option and timing data\n" +
+    "--help                -h\t    \t Display this message and exit")
     .format(
-      DefaultParams('ActiveMaxSize).toString,
+      DefaultParams('ActiveMaxSize),
       DefaultParams('SourceInactivity),
-      DefaultParams('SystemTimeout).toString,
-      DefaultParams('PropagationTimeout).toString,
-      DefaultParams('QueueCheckPeriod).toString,
-      DefaultParams('DelayBetweenInitSources).toString
+      DefaultParams('SystemTimeout),
+      DefaultParams('PropagationTimeout),
+      DefaultParams('QueueCheckPeriod),
+      DefaultParams('DelayBetweenInitSources),
+      DefaultParams('LogFile)
     )
 
   if (args.length == 0) println(usage)
