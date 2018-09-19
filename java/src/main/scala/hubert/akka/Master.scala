@@ -10,6 +10,7 @@ import akka.actor.{
 }
 import akka.util.Timeout
 import akka.pattern.ask
+import akka.event.LogSource
 
 import scala.collection.concurrent.TrieMap
 
@@ -18,7 +19,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import ExecutionContext.Implicits.global
 import scala.util.{Success, Failure}
 
-import akka.event.LogSource
+import java.io._
 
 object Master extends CommonInterfaces {
   def props(opts: Map[Symbol, Any]): Props = Props(new Master(opts))
@@ -35,7 +36,9 @@ class Master(opts: Map[Symbol, Any])
   import Messages._
 
   // TODO remove for production!!!
-  timers.startSingleTimer(TimedOut, TimedOut, opts('SystemTimeout).asInstanceOf[FiniteDuration])
+  timers.startSingleTimer(TimedOut,
+                          TimedOut,
+                          opts('SystemTimeout).asInstanceOf[FiniteDuration])
 
   var idIter: Iterator[Source] = _
   var grandTotal: Double = _
@@ -67,16 +70,26 @@ class Master(opts: Map[Symbol, Any])
   def addSources() {
     if (active.size >= opts('ActiveMaxSize).asInstanceOf[Int]) return
 
-    while (idIter.hasNext && active.size < opts('ActiveMaxSize).asInstanceOf[Int]) {
+    while (idIter.hasNext && active.size < opts('ActiveMaxSize)
+             .asInstanceOf[Int]) {
       var source = idIter.next
       active += (source -> new SourceStatus(supervisors))
       proclaimNewSource(source)
     }
 
     if (active.isEmpty && idleQueue.isEmpty && grandTotal > 0) {
-      log.warning(" \n \n \tGrand total: {} \n \n ", grandTotal)
-      context.system.terminate
+      onFinish
     }
+  }
+
+  def onFinish() {
+    log.warning(" \n \n \tGrand total: {} \n \n ", grandTotal)
+
+    val pw = new FileWriter(opts('LogPath).asInstanceOf[String], true)
+    try pw.write("Grand total: %d\n".format(grandTotal.toLong))
+    finally pw.close
+
+    context.system.terminate
   }
 
   def onCorrectBy(diff: Double, source: Source) {
@@ -113,7 +126,8 @@ class Master(opts: Map[Symbol, Any])
     else if (source == -1)
       source = idIter.next
 
-    implicit val timeout = Timeout(opts('PropagationTimeout).asInstanceOf[FiniteDuration])
+    implicit val timeout = Timeout(
+      opts('PropagationTimeout).asInstanceOf[FiniteDuration])
     var futures = supervisors.map { _ ? NewSource(source) }.toList
     // Wtf, Array is not traversable once?!
     Future.sequence(futures).onComplete {
@@ -139,9 +153,12 @@ class Master(opts: Map[Symbol, Any])
   override def receive = super.receive orElse {
     case CheckQueue => onQueueCheck; addSources
     case GraphBuilder.GraphReady => {
-        idIter = nodesRef.keys.iterator
-        timers.startPeriodicTimer(CheckQueue, CheckQueue, opts('QueueCheckPeriod).asInstanceOf[FiniteDuration])
-      }
+      idIter = nodesRef.keys.iterator
+      timers.startPeriodicTimer(
+        CheckQueue,
+        CheckQueue,
+        opts('QueueCheckPeriod).asInstanceOf[FiniteDuration])
+    }
     case CorrectBy(diff, src) => onCorrectBy(diff, src)
     case NotIdle(src)         => onNotIdle(src)
     case ProclaimNewSource(a) => proclaimNewSource()

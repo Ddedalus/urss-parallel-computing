@@ -16,7 +16,7 @@ object AkkaASP extends App {
     'PropagationTimeout -> 1000.milli,
     'QueueCheckPeriod -> 50.millis,
     'DelayBetweenInitSources -> 20.millis,
-    'LogFile -> "./sample_aspLog.log"
+    'LogPath -> "./sample_aspLog.log"
   )
 
   val usage
@@ -38,7 +38,7 @@ object AkkaASP extends App {
       DefaultParams('PropagationTimeout),
       DefaultParams('QueueCheckPeriod),
       DefaultParams('DelayBetweenInitSources),
-      DefaultParams('LogFile)
+      DefaultParams('LogPath)
     )
 
   if (args.length == 0) println(usage)
@@ -60,6 +60,8 @@ object AkkaASP extends App {
         argParser(map ++ Map('PropagationTimeout -> value.toInt.millis), tail)
       case ("--active-max-size" | "-a") :: value :: tail =>
         argParser(map ++ Map('ActiveMaxSize -> value.toInt), tail)
+      case ("--log-path" | "-l") :: value :: tail =>
+        argParser(map ++ Map('ActiveMaxSize -> value.toString), tail)
       case ("--help" | "-h") :: tail => print(usage)
                                         sys.exit(0)
       case string :: opt2 :: tail if isSwitch(opt2) =>
