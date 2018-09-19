@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     read_directory(inputPath, inputNames);
     Timer t;
     map<string, string> c = {
-        {"algorithm", "paraBitset"},
+        {"algorithm", "paraBFS"},
         {"machine", "orac"},
         {"graphRepresentation", "vector"},
         {"graphType", "barabasi"},
@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
         r["nodes"] = to_string(vg.nodes());
         r["edges"] = to_string(vg.edges());
 	    t.start("ParaBFS:\t" + p);
-	    auto ans = sspParaBitset(vg, numThreads);
+	    auto ans = sspParaBFS(vg, numThreads);
     r["runtime"] = to_string(t.getElapsed());
     if(ans != sspBitset(vg))
         cout << "Wrong answer!!!"<<endl;
