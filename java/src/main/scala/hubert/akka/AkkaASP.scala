@@ -3,6 +3,7 @@ package hubert.akka
 import akka.actor.{Actor, ActorLogging, ActorRef, ActorSystem, Props}
 import scala.concurrent.duration._
 
+import java.io.File
 // import kamon.Kamon
 // import kamon.prometheus.PrometheusReporter
 
@@ -18,9 +19,10 @@ object AkkaASP extends App {
     'DelayBetweenInitSources -> 20.millis,
     'LogPath -> "./sample_aspLog.log"
   )
+  var graph_path = "."
 
   val usage
-    : String = ("As a first argument, please specify path to a graph file\n\n" +
+    : String = ("Usage:\n \nAs a first argument, please specify path to a graph parent directory\n \n" +
     "The following switches and defaults are available:\n" +
     "  switch                 default\t  description\n" +
     "--active-max-size     -a\t%s\t\tMaximal number of parallel searches to be performed\n" +
@@ -30,7 +32,7 @@ object AkkaASP extends App {
     "--queue-check-period  -s\t%s\thow often to check idleQueue\n" +
     "--delay-between-init  -d\t%s\tTo begin, several sources are spawned at once. This option introduces a delay between them.\n" +
     "--log-path            -l\t%s\tFile to append with result, option and timing data\n" +
-    "--help                -h\t    \t Display this message and exit")
+    "--help                -h\t    \t Display this message and exit\n Exiting")
     .format(
       DefaultParams('ActiveMaxSize),
       DefaultParams('SourceInactivity),
@@ -41,10 +43,8 @@ object AkkaASP extends App {
       DefaultParams('LogPath)
     )
 
-  if (args.length == 0) println(usage)
-  val arglist = args.toList
+  
   type OptionMap = Map[Symbol, Any]
-
   def argParser(map: OptionMap, list: List[String]): OptionMap = {
     def isSwitch(s: String): Boolean = (s(0) == '-')
     list match {
@@ -65,33 +65,53 @@ object AkkaASP extends App {
       case ("--help" | "-h") :: tail => print(usage)
                                         sys.exit(0)
       case string :: opt2 :: tail if isSwitch(opt2) =>
-        argParser(map ++ Map('GraphPath -> string), list.tail)
+        graph_path = string
+        argParser(map, list.tail)
       case string :: Nil =>
-        argParser(map ++ Map('GraphPath -> string), list.tail)
+        graph_path = string
+        argParser(map, list.tail)
       case option :: tail =>
         println("Unknown option " + option)
         sys.exit(1)
     }
   }
 
-  val options = argParser(DefaultParams, arglist)
-  println("Options:")
-  options.foreach(println)
-
-  if(! options.contains('GraphPath)){
-    print("Please specify a path to graph file!")
-    sys.exit(2)
+  def listGraphFiles(dir: String):List[File] = {
+    val d = new File(dir)
+    if (d.exists && d.isDirectory) {
+        d.listFiles.filter(_.isFile).filter(_.getName.endsWith(".edges")).sorted.toList
+    } else {
+        List[File]()
+    }
   }
+
+  if (args.length == 0) (println(usage), sys.exit(0))
+
+  val options = argParser(DefaultParams, args.toList)
+  println("Current settings:")
+  options.foreach(println)
+  val graph_files = listGraphFiles(graph_path)
 
   // Kamon.addReporter(new PrometheusReporter())
   // Kamon.addReporter(new ZipkinReporter())
 
-  // val filename = "/home/hubert/Code/Warwick/BSP/data/newcastle/n3.edges"
-  val system: ActorSystem = ActorSystem("asp")
-  val master = system.actorOf(Master.props(options), "master")
-  // val reply = i.receive()
-  // val transformedReply = i.select(DefaultParams.SystemTimeout) {
-  //   case Master.Answer(tot) => print("Received answer: %d".format(tot))
-  // }
+  val iter = graph_files.iterator
+  def runActorSystem(iter : Iterator[File]){
+    var f = iter.next
+    print("Info: starting execution on graph file: " + f.getPath)
+    var system: ActorSystem = ActorSystem("asp")
+    // this fires the execution. Master appends the log on successful run
+    var master = system.actorOf(Master.props(options ++ Map('GraphPath -> f.getPath)), "master")
+
+    system.registerOnTermination {
+      if(iter.hasNext)
+        runActorSystem(iter)
+    }
+  }
+  if(! iter.hasNext)
+    print("Warning: No graph files found in " + graph_path)
+  else{
+    runActorSystem(iter)
+  }
 
 }
