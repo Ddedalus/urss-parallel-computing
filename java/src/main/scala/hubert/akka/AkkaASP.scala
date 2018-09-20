@@ -25,6 +25,7 @@ object AkkaASP extends App {
     : String = ("Usage:\n \nAs a first argument, please specify path to a graph parent directory\n \n" +
     "The following switches and defaults are available:\n" +
     "  switch                 default\t  description\n" +
+    "--cores               -c\t  \t\tNumber of cores available to the program. *compulsory*\n" +
     "--active-max-size     -a\t%s\t\tMaximal number of parallel searches to be performed\n" +
     "--source-inactivity   -i\t%s\thow long source should stay in idleQueue\n" +
     "--system-timeout      -s\t%s\tafter this time, ActorSystem will be terminated\n" +
@@ -49,6 +50,8 @@ object AkkaASP extends App {
     def isSwitch(s: String): Boolean = (s(0) == '-')
     list match {
       case Nil => map
+      case ("--cores" | "-c") :: value :: tail =>
+        argParser(map ++ Map('Cores -> value.toInt), tail)
       case ("--system-timeout" | "-s") :: value :: tail =>
         argParser(map ++ Map('SystemTimeout -> value.toInt.seconds), tail)
       case ("--queue-check-period" | "-q") :: value :: tail =>
@@ -85,9 +88,10 @@ object AkkaASP extends App {
     }
   }
 
-  if (args.length == 0) (println(usage), sys.exit(0))
-
+  if (args.length == 0) {println(usage); sys.exit(0)}
   val options = argParser(DefaultParams, args.toList)
+  if(! options.contains('Cores)) {println("Must specify number of cores available: -c <int>"); sys.exit(1)}
+
   println("Current settings:")
   options.foreach(println)
   val graph_files = listGraphFiles(graph_path)

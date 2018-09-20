@@ -42,6 +42,7 @@ class Master(opts: Map[Symbol, Any])
 
   var idIter: Iterator[Source] = _
   var grandTotal: Double = _
+  var start_time: Long = _
   var active = scala.collection.concurrent.TrieMap[Source, SourceStatus]()
   var idleQueue = scala.collection.mutable.LinkedHashMap[Source, Millis]()
 
@@ -83,10 +84,20 @@ class Master(opts: Map[Symbol, Any])
   }
 
   def onFinish() {
+    val duration = (System.currentTimeMillis() - start_time)/1000.0
+
     log.warning(" \n \n \tGrand total: {} \n \n ", grandTotal)
 
     val pw = new FileWriter(opts('LogPath).asInstanceOf[String], true)
-    try pw.write("Grand total: %d\n".format(grandTotal.toLong))
+    try{
+      pw.write("ans,time,cores,nodes,graph\n")
+      pw.write("%d,%f,%d,%d,%s\n".format(
+          grandTotal.toLong,
+          duration,
+          opts('Cores).asInstanceOf[Int],
+          nodesRef.size,
+          opts('GraphPath).asInstanceOf[String]))
+    }
     finally pw.close
 
     context.system.terminate
@@ -158,6 +169,7 @@ class Master(opts: Map[Symbol, Any])
   override def receive = super.receive orElse {
     case CheckQueue => onQueueCheck; addSources
     case GraphBuilder.GraphReady => {
+      start_time = System.currentTimeMillis()
       idIter = nodesRef.keys.iterator
       timers.startPeriodicTimer(
         CheckQueue,
