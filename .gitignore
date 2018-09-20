@@ -1,3 +1,6 @@
+# Generated .pbs files:
+java/output/pbs 
+
 
 #### R junk files ################3
 
@@ -91,3 +94,4 @@ java/sbt-dist/
 java/ensime-langserver.log
 java/pc.stdout.log
 java/c:/logs/akka.log
+java/output/pbs/1_akka.pbs

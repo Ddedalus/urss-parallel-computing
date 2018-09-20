@@ -1,0 +1,10 @@
+#!/bin/bash
+#PBS -l nodes=1:ppn=^
+#PBS -l pmem=2571mb
+#PBS -l walltime=00:30:00
+
+module load java
+
+srun -n 1 -c ^ java -jar ./scala-2.12/akka-asp-assembly-1.1.jar ../../data/newcastle -a 100 -s 600 -l ../output/orac_log.log 
+
+exit 0
