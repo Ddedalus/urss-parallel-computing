@@ -1,0 +1,11 @@
+On:
+ - propagation timeout
+ - correction from inactive source
+Do: 
+ - restart all children (graph structure is remapped onto actors)
+ - increase propagation timeout OR
+ - increase queue delay
+ - increase failure counter
+
+Problem:
+ - old queued messages cause unpredicted behaviour
