@@ -150,6 +150,11 @@ class Master(opts: Map[Symbol, Any])
     context.system.terminate
   }
 
+  override def postStop(){
+    log.error("Master terminated. Shutting down the system")
+    context.system.terminate
+  }
+
   override def receive = super.receive orElse {
     case CheckQueue => onQueueCheck; addSources
     case GraphBuilder.GraphReady => {
