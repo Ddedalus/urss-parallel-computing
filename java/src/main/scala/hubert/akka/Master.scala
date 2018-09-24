@@ -69,7 +69,7 @@ class Master(opts: Map[Symbol, Any])
   }
 
   def addSources() {
-    if (active.size >= opts('ActiveMaxSize).asInstanceOf[Int]) return
+    if (active.size >= opts('ActiveMaxSize).asInstanceOf[String].toInt) return
 
     while (idIter.hasNext && active.size < opts('ActiveMaxSize)
              .asInstanceOf[Int]) {
