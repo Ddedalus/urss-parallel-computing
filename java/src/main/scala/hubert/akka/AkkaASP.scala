@@ -64,7 +64,7 @@ object AkkaASP extends App {
       case ("--active-max-size" | "-a") :: value :: tail =>
         argParser(map ++ Map('ActiveMaxSize -> value.toInt), tail)
       case ("--log-path" | "-l") :: value :: tail =>
-        argParser(map ++ Map('ActiveMaxSize -> value.toInt), tail)
+        argParser(map ++ Map('LogPath -> value.toString), tail)
       case ("--help" | "-h") :: tail => print(usage)
                                         sys.exit(0)
       case string :: opt2 :: tail if isSwitch(opt2) =>
