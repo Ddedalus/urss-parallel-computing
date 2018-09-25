@@ -1,0 +1,109 @@
+---
+title: "Classical algorithms in C++"
+output:
+  html_notebook: default
+---
+
+Data comes from running two types of algorithms, both implemented in C++ and parallelized with OpenMP on a single node in Orac cluster. Both algorithms compute all-pair shortest paths.  
+paraBFS = Parallel Breadth First Search  
+paraBitset = Parallel Memoized Deepening Search (designed by Newcastle)  
+
+```{r include=FALSE}
+knitr::opts_chunk$set(echo=F)
+library(ggplot2)
+library(here)
+library(magrittr)
+tab <- read.csv2(here("R","classic_runtimes.csv"))
+# write.csv2(tab, here("R", "classic_runtimes.csv"))
+```
+
+data formatting
+```{r}
+tab$runtime %<>% as.character %>% as.numeric
+tab$instance %<>% sapply(function(x) gsub("0(\\d\\d)k.edges", "\\1k nodes", x)) %>% as.factor 
+```
+
+```{r}
+library(extrafont)
+# font_import()
+# loadfonts()
+theme_set(theme_light())
+theme_update(plot.title = element_text(family="Lato", hjust = 0.5, size=18), text=element_text(family="Lato", size=12))
+```
+
+## Runtime plots
+```{r echo=FALSE}
+tab %>% subset(algorithm=="paraBitset") %>% ggplot(aes(x=threads, y=runtime, color=instance)) +
+  geom_line() +
+  geom_point() +
+  labs(title="Parallelisation of Bitset algorithm (OpenMP)", y="Runtime (s)", x="Number of processors") +
+  guides(colour = guide_legend(reverse=T))
+```
+
+Analysis: even the biggest instances appear to exhaust parallelisation abilities around 16 processors. This may be due to the read and write of shared memory of reachability matrix.
+
+```{r}
+tab %>% subset(algorithm=="paraBFS") %>% ggplot(aes(x=threads, y=runtime, color=instance)) +
+  geom_line() + geom_point() +
+    scale_x_continuous(breaks = c(1, 4, 8, 12, 16, 20, 24)) + 
+  labs(title="Parallelisation of BFS algorithm (OpenMP)", y="Runtime (s)", x="Number of processors") +
+  guides(colour = guide_legend(reverse=T))
+```
+
+Note: Large instances overtimed on a single core. I'm running another job now to fix this.
+
+## Speedup computation
+```{r}
+bitset <- tab %>% subset(algorithm=="paraBitset")
+bitset_single <- bitset %>% subset(threads==1) %>% .[c("runtime", "instance")]
+bitset_single$single_runtime <- bitset_single$runtime
+bitset_single$runtime <- NULL 
+bitset <- merge(bitset, bitset_single, by="instance")
+bitset$speedup <- bitset$single_runtime / bitset$runtime
+```
+
+```{r}
+bitset %>% subset(nodes > 2000) %>% ggplot(aes(x=threads, y=speedup, color=instance)) +
+  geom_point() +
+  geom_line() + 
+  scale_x_continuous(breaks = c(1, 4, 8, 12, 16, 20, 24)) + 
+  guides(colour = guide_legend(reverse=T)) + scale_colour_hue(l=45) + 
+  # scale_colour_manual(values=colPal) +
+  labs(title="Speedup factor for ID", y="Speedup", x="Number of processors")
+```
+
+Analysis: this is not linear by any chance. Apparently there is an upper bound, caused by non-parallelized code and shared memory overhead.
+```{r}
+bfs <- tab %>% subset(algorithm=="paraBFS")
+bfs_single <- bfs %>% subset(threads==1) %>% .[c("runtime", "instance")]
+bfs_single$single_runtime <- bfs_single$runtime
+bfs_single$runtime <- NULL 
+bfs <- merge(bfs, bfs_single, by="instance")
+bfs$speedup <- bfs$single_runtime / bfs$runtime
+```
+
+```{r}
+bfs %>% subset(nodes > 2000) %>% ggplot(aes(x=threads, y=speedup, color=instance)) +
+  geom_point() + geom_line() +
+  scale_x_continuous(breaks = c(1, 4, 8, 12, 16, 20, 24)) + 
+  scale_colour_hue(l=45) + 
+  guides(colour = guide_legend(reverse=T)) +
+  labs(title="Speedup factor for BFS", y="Speedup", x="Number of processors")
+```
+
+Note: missing single-core values for large instances; will fix that soon.
+
+Analysis: Speedup is largely proportional to number of cores with around 20% overhead due to threading. Good linear behaviour is expected as whole main function code is in a parallel region and the only shared memory is graph adjacency list, read only. 
+
+## Algorithm comparison
+```{r}
+bestRuntimes <- aggregate(tab$runtime, by=list(tab$nodes, tab$algorithm), min)
+colnames(bestRuntimes) <- c("nodes", "algorithm", "best_runtime")
+bestRuntimes %>% ggplot(aes(x=nodes, y=best_runtime, color=algorithm)) + geom_line() +
+  geom_point() +
+  labs(title="Best runtime per instance", y="Runtime (s)", x="Graph nodes")
+```
+
+Analysis: Despite it's limited ability to be parallelized, bitset implementation is still signifficantly faster. Considering the fact that it's best results required around 16 cores it is less resource hungry as well, in a sense.
+
+However, it's O(n^2) memory requirements should be considered as well.
