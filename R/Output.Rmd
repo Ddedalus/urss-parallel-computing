@@ -13,18 +13,28 @@ knitr::opts_chunk$set(echo=F)
 library(ggplot2)
 library(here)
 library(magrittr)
-tab <- read.csv2(here("R","classic_runtimes.csv"))
-# write.csv2(tab, here("R", "classic_runtimes.csv"))
+tab_first<- read.csv2(here("R","classic_runtimes.csv"))
+extra <- read.csv2(here("R","extra_runtimes.csv"))
+write.csv2(tab, here("R", "runtimes.csv"))
 ```
 
-data formatting
+### data formatting
 ```{r}
-tab$runtime %<>% as.character %>% as.numeric
-tab$instance %<>% sapply(function(x) gsub("0(\\d\\d)k.edges", "\\1k nodes", x)) %>% as.factor 
+tab_first$runtime %<>% as.character %>% as.numeric
+extra$runtime %<>% as.character %>% as.numeric
+```
+
+```{r}
+tab_first$X = NULL
+tab <- extra %>% subset(threads==1 & nodes > 50000) %>% rbind(tab_first)
+tab$instance %<>% sapply(function(x) gsub("0(\\d\\d)k.edges", "\\1k", x)) %>% as.factor
+tab_first <- NULL
 ```
 
 ```{r}
 library(extrafont)
+wid <- 12
+hei <- 8.2
 # font_import()
 # loadfonts()
 theme_set(theme_light())
@@ -32,7 +42,7 @@ theme_update(plot.title = element_text(family="Lato", hjust = 0.5, size=18), tex
 ```
 
 ## Runtime plots
-```{r echo=FALSE}
+```{r eval=FALSE, include=FALSE}
 tab %>% subset(algorithm=="paraBitset") %>% ggplot(aes(x=threads, y=runtime, color=instance)) +
   geom_line() +
   geom_point() +
@@ -42,8 +52,8 @@ tab %>% subset(algorithm=="paraBitset") %>% ggplot(aes(x=threads, y=runtime, col
 
 Analysis: even the biggest instances appear to exhaust parallelisation abilities around 16 processors. This may be due to the read and write of shared memory of reachability matrix.
 
-```{r}
-tab %>% subset(algorithm=="paraBFS") %>% ggplot(aes(x=threads, y=runtime, color=instance)) +
+```{r eval=FALSE, include=FALSE}
+tab %>% subset(algorithm=="paraBFS" & nodes > 2000) %>% ggplot(aes(x=threads, y=runtime, color=instance)) +
   geom_line() + geom_point() +
     scale_x_continuous(breaks = c(1, 4, 8, 12, 16, 20, 24)) + 
   labs(title="Parallelisation of BFS algorithm (OpenMP)", y="Runtime (s)", x="Number of processors") +
@@ -62,14 +72,15 @@ bitset <- merge(bitset, bitset_single, by="instance")
 bitset$speedup <- bitset$single_runtime / bitset$runtime
 ```
 
-```{r}
+```{r fig.height=3.54, fig.width=4.72}
 bitset %>% subset(nodes > 2000) %>% ggplot(aes(x=threads, y=speedup, color=instance)) +
   geom_point() +
   geom_line() + 
   scale_x_continuous(breaks = c(1, 4, 8, 12, 16, 20, 24)) + 
-  guides(colour = guide_legend(reverse=T)) + scale_colour_hue(l=45) + 
-  # scale_colour_manual(values=colPal) +
-  labs(title="Speedup factor for ID", y="Speedup", x="Number of processors")
+  scale_colour_hue(l=45) + 
+  guides(color=FALSE) + 
+  labs(y="Speedup", x="Number of processors", color=NULL)
+ggsave(here("R", "output", "speedup-id-barabasi.png"), dpi = 300, width = wid, height = hei, units = "cm")
 ```
 
 Analysis: this is not linear by any chance. Apparently there is an upper bound, caused by non-parallelized code and shared memory overhead.
@@ -82,26 +93,31 @@ bfs <- merge(bfs, bfs_single, by="instance")
 bfs$speedup <- bfs$single_runtime / bfs$runtime
 ```
 
-```{r}
+```{r fig.height=3.14, fig.width=4.72}
 bfs %>% subset(nodes > 2000) %>% ggplot(aes(x=threads, y=speedup, color=instance)) +
   geom_point() + geom_line() +
   scale_x_continuous(breaks = c(1, 4, 8, 12, 16, 20, 24)) + 
   scale_colour_hue(l=45) + 
   guides(colour = guide_legend(reverse=T)) +
-  labs(title="Speedup factor for BFS", y="Speedup", x="Number of processors")
+  labs(y="Speedup", x="Number of processors", color="Vertices") +
+ggsave(here("R", "output", "speedup-bfs-barabasi.png"), dpi = 300, width = wid, height = hei, units = "cm")
 ```
-
-Note: missing single-core values for large instances; will fix that soon.
 
 Analysis: Speedup is largely proportional to number of cores with around 20% overhead due to threading. Good linear behaviour is expected as whole main function code is in a parallel region and the only shared memory is graph adjacency list, read only. 
 
 ## Algorithm comparison
-```{r}
+```{r fig.height=3.54, fig.width=4.72}
 bestRuntimes <- aggregate(tab$runtime, by=list(tab$nodes, tab$algorithm), min)
-colnames(bestRuntimes) <- c("nodes", "algorithm", "best_runtime")
-bestRuntimes %>% ggplot(aes(x=nodes, y=best_runtime, color=algorithm)) + geom_line() +
-  geom_point() +
-  labs(title="Best runtime per instance", y="Runtime (s)", x="Graph nodes")
+colnames(bestRuntimes) <- c("nodes", "Algorithm", "best_runtime")
+levels(bestRuntimes$Algorithm) <- c("Parallel BFS", "Parallel ID")
+bestRuntimes %>% ggplot(aes(x=nodes, y=best_runtime, color=Algorithm)) +
+  geom_line() + geom_point() +
+  scale_colour_hue(l=45) + 
+  theme(legend.position=c(0.15, 0.82),
+        legend.background = element_blank(),
+        legend.box.background = element_rect(colour = "black")) + 
+  labs(y="Runtime (s)", x="Number of vertices")
+ggsave(here("R", "output", "best-runtime.png"), dpi = 300, width = wid, height = hei, units = "cm")
 ```
 
 Analysis: Despite it's limited ability to be parallelized, bitset implementation is still signifficantly faster. Considering the fact that it's best results required around 16 cores it is less resource hungry as well, in a sense.
